@@ -510,7 +510,10 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
     if (/\b(no|none|not required|no approval)\b/i.test(mainBlocker.text) && mainBlocker.evidence !== "documented")
       uncertainties.push("No approval requirement was found in the pages read. That does not prove none exists.");
 
-    const documentedCount = [ex.testingBeforeReview, ex.mainBlocker, ...ex.prerequisites, ...ex.steps].filter(
+    const documentedCount = [
+      ex.testingBeforeReview, ex.mainBlocker, ex.activeWork, ex.reviewWait, ...ex.policyDeadlines, ...ex.costs,
+      ...ex.prerequisites, ...ex.permissions, ...ex.steps, ...ex.blockers,
+    ].filter(
       (c) => c.quote && c.sourceIds.some((sid) => srcMap.has(sid) && quoteSupported(c.quote, srcMap.get(sid)!.text)),
     ).length;
     const catalogSaysOAuth = /OAUTH2/i.test(catalogEntry?.authMode ?? "");
