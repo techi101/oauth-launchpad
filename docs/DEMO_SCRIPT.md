@@ -15,6 +15,8 @@
 
 **4. Live generation for an unfamiliar app (2 min).** Let the reviewer pick the app, for example "Calendly", "Read upcoming meetings and cancel them", "External customers". Point at each real event: the catalog hint, official domains, each page read (tagged *official* or *other*), the gaps it's investigating, the OAuth metadata probe, then "Evidence check: N of N quoted claims matched their source". The guide opens at a permanent link.
 
+**4b. Composio fit (60 s).** On the Xero guide, scroll to **On Composio**: it's bring-your-own, so check the redirect URI warning (the form defaults to v1, the docs say v3, issue #2999), the 31 default scopes to trim, the session snippet, and "verify with one real call". Then open **/coverage**: 275 bring-your-own toolkits, 259 with no walkthrough, the ranked next 100, and the method. Mention `/llms.txt` for agents.
+
 **5. Honesty (30 s).** Type a made-up name such as "Flurbix": the agent asks for the website instead of inventing a guide. On any generated guide, show the *Uncertain* section and the *Research log*.
 
 If a run fails because the model provider is overloaded, the UI says so and keeps the partial result. That behaviour is intentional.

@@ -47,6 +47,27 @@
 
 The production library was regenerated with the final code: Calendly 22/22, Linear 28/28, Dropbox 24/26, Xero 27/27, Gmail send-only 21/22 quotes matched.
 
+## Third pass: research into Composio and this space
+
+The research covered Composio's docs, pricing, toolkit data, GitHub issues and job posts, plus competitors (Nango, verapli, Unified.to, Pipedream, Arcade, Scalekit, Paragon). Before building on them, I re-checked these claims myself:
+- the v3 and v1 redirect URIs (white-labelling docs)
+- the 63 own-app guides (composio.dev/auth)
+- issue #4392 (open)
+- the Hobby plan's limit of 20,000 calls on managed apps (pricing page)
+- the toolkit API needs a key (401), so the public `toolkits.json` is used instead
+
+| Added | Why (brief / role) |
+|---|---|
+| "On Composio" section on every guide | The developer's real path runs through a Composio auth config. The redirect URI and scope details come from Composio's data, not the model |
+| `/coverage` ranking of 275 bring-your-own toolkits | Answers "which 100?" with a stated method. The APM role is measured on supply and supply health |
+| Authorize probe with a made-up client ID | More setup actually attempted. Dropbox redirected to `authorize_error` and Xero to an error page, so registration is required. A false positive (matching `client_id` inside Calendly's redirect URL) was caught and fixed |
+| JSON, `llms.txt`, guide index API | Guides that agents can read |
+| Staggered review dates and re-check link | Composio's own KB has a "review cliff" (#4331) |
+| Cloudflare Worker mirror | The user's network couldn't open `*.vercel.app`. The reviewers' network might not either |
+| Scrub step | Two production guides showed `[object Object]` in "Uncertain". Junk list items are now dropped before saving and hidden in older guides |
+
+The production library was regenerated after this pass: Calendly, Gmail (send only), Xero, Linear and Dropbox. Duplicates were removed.
+
 ## Still unverified or known gaps
 
 - **Calendly cancel scope:** fixed in the second pass (see above). The first run had disclosed the gap correctly instead of inventing an answer.
