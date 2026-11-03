@@ -205,6 +205,9 @@ Rules:
 - permissions: list every scope the requested actions need (e.g. reading AND writing if both are asked), with exact scope names from the sources.
 - blockers: 2-5 realistic blockers for this use case and audience (e.g. redirect URI mismatch, plan/tier limits, admin approval, review rejection, rate limits), each grounded in a source where possible.
 - prerequisites: accounts, plan tier, admin role, HTTPS redirect URL, privacy policy, etc. as supported by sources.
+- activeWork: a short labelled estimate of the developer's hands-on setup time (e.g. "about 1-2 hours to register the app and configure redirect URIs and scopes; more if review materials are needed"), never empty.
+- agentCan: 3-6 setup-and-approval tasks an AI agent can do for the developer (e.g. fill the registration form fields, prepare redirect URIs, pick and justify minimal scopes, draft the privacy policy or review answers, check app status). Not generic coding steps.
+- humanMust: 3-6 things only a person can do (log in to the provider console, accept legal terms, verify identity/domain/business, pay for plans or assessments, record a demo video, respond to reviewers, grant admin approval).
 - nextAction: one concrete thing to do now, with where to do it.
 Return JSON with keys: oauthSupported, registrationUrl, route, routeReason, difficulty (low|medium|high|unknown), difficultyReason, testingBeforeReview, mainBlocker, nextAction, activeWork, reviewWait, policyDeadlines[], costs[], prerequisites[], permissions[{scope,enables,reviewImpact,sourceIds,quote}], steps[{id,phase,title,detail,where,outcome,dependsOn,owner,sourceIds,quote}], blockers[{symptom,cause,nextAction,owner,sourceIds,quote}], agentCan[], humanMust[], uncertainties[], conflicts[].
 Claim objects are {text, sourceIds, quote, inferred}.`;
@@ -544,7 +547,8 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
       reviewWait.text = "Provider does not publish a turnaround we could verify.";
     }
     const activeWork = claim(ex.activeWork);
-    if (activeWork.evidence !== "documented" && !/^estimate/i.test(activeWork.text))
+    if (!activeWork.text.trim()) activeWork.text = "Not estimated from the pages read.";
+    else if (activeWork.evidence !== "documented" && !/^estimate/i.test(activeWork.text))
       activeWork.text = `Estimate: ${activeWork.text}`;
     const mainBlocker = claim(ex.mainBlocker);
     if (/\b(no|none|not required|no approval)\b/i.test(mainBlocker.text) && mainBlocker.evidence !== "documented")
