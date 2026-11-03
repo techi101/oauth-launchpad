@@ -20,43 +20,69 @@
     "testingBeforeReview": {
       "text": "Yes, in Testing status with up to 100 test users you list. Testers see a warning screen, and with External user type their refresh tokens expire in 7 days.",
       "evidence": "documented",
-      "sourceIds": ["g-audience", "g-oauth2", "g-restricted"]
+      "sourceIds": [
+        "g-audience",
+        "g-oauth2",
+        "g-restricted"
+      ]
     },
     "mainBlocker": {
       "text": "Restricted scope verification plus a security assessment from a Google-empanelled assessor, repeated at least every 12 months, for apps that access restricted data from or through a server.",
       "evidence": "documented",
-      "sourceIds": ["g-restricted"]
+      "sourceIds": [
+        "g-restricted"
+      ]
     },
-    "nextAction": "Create the Google Cloud project, set branding on a domain you own, add gmail.readonly and gmail.compose, add test users, and start brand verification early."
+    "nextAction": "Create the Google Cloud project, set branding on a domain you own, add gmail.readonly and gmail.compose, add test users, and start brand verification early.",
+    "managedOAuth": {
+      "status": "available",
+      "text": "Composio provides a managed OAuth app for Gmail, so you can prototype without registering one. Users then see Composio's name on the consent screen and share its rate-limit quota, so an external launch usually brings its own app.",
+      "sourceIds": [
+        "composio-managed",
+        "composio-custom"
+      ]
+    }
   },
   "timing": {
     "activeWork": {
       "text": "Hours for project, consent screen and client setup; days to prepare privacy policy, scope justifications and demo video; assessment prep depends on your stack. Our estimate.",
       "evidence": "inferred",
-      "sourceIds": ["g-restricted", "g-sensitive"]
+      "sourceIds": [
+        "g-restricted",
+        "g-sensitive"
+      ]
     },
     "reviewWait": {
       "text": "Google states: brand verification typically a few minutes automated, manual review usually 2-3 business days; restricted scope verification 'can potentially take several weeks'. No fixed end date is published for restricted review or CASA.",
       "evidence": "documented",
-      "sourceIds": ["g-brand", "g-restricted"]
+      "sourceIds": [
+        "g-brand",
+        "g-restricted"
+      ]
     },
     "policyDeadlines": [
       {
         "text": "Security assessment must be redone at least every 12 months after the assessor's Letter of Assessment approval date to keep restricted scopes.",
         "evidence": "documented",
-        "sourceIds": ["g-restricted"]
+        "sourceIds": [
+          "g-restricted"
+        ]
       },
       {
         "text": "Unverified apps showing the unverified app screen are limited to 100 new users in total.",
         "evidence": "documented",
-        "sourceIds": ["g-unverified"]
+        "sourceIds": [
+          "g-unverified"
+        ]
       }
     ],
     "costs": [
       {
         "text": "The security assessment is done by an independent, Google-approved third party. Google pages we fetched do not state the fee; secondary sources say the developer pays the assessor.",
         "evidence": "unverified",
-        "sourceIds": ["g-restricted"]
+        "sourceIds": [
+          "g-restricted"
+        ]
       }
     ]
   },
@@ -64,17 +90,25 @@
     {
       "text": "A domain you own, verified in Google Search Console, covering your homepage, privacy policy and terms URLs.",
       "evidence": "documented",
-      "sourceIds": ["g-brand"]
+      "sourceIds": [
+        "g-brand"
+      ]
     },
     {
       "text": "A public homepage and a privacy policy on the same domain that explains how you access, use, store and share Google user data.",
       "evidence": "documented",
-      "sourceIds": ["g-brand", "g-restricted"]
+      "sourceIds": [
+        "g-brand",
+        "g-restricted"
+      ]
     },
     {
       "text": "Your use case must be a permitted Gmail app type, e.g. one that enhances the email experience for productivity. No training general AI models on user data.",
       "evidence": "documented",
-      "sourceIds": ["g-gmail-policy", "g-restricted"]
+      "sourceIds": [
+        "g-gmail-policy",
+        "g-restricted"
+      ]
     }
   ],
   "permissions": [
@@ -83,21 +117,29 @@
       "enables": "View email messages and settings.",
       "reviewImpact": "Restricted: restricted scope verification plus security assessment if accessed via your server.",
       "evidence": "documented",
-      "sourceIds": ["g-scopes", "g-restricted"]
+      "sourceIds": [
+        "g-scopes",
+        "g-restricted"
+      ]
     },
     {
       "scope": "https://www.googleapis.com/auth/gmail.compose",
       "enables": "Manage drafts and send emails (needed to create draft replies).",
       "reviewImpact": "Restricted, same as above. Note it also allows sending.",
       "evidence": "documented",
-      "sourceIds": ["g-scopes"]
+      "sourceIds": [
+        "g-scopes"
+      ]
     },
     {
       "scope": "https://www.googleapis.com/auth/gmail.send (not needed here)",
       "enables": "Send email on the user's behalf only; cannot read or draft.",
       "reviewImpact": "Sensitive: sensitive scope verification (up to 10 days per Google), no security assessment.",
       "evidence": "documented",
-      "sourceIds": ["g-scopes", "g-sensitive"]
+      "sourceIds": [
+        "g-scopes",
+        "g-sensitive"
+      ]
     }
   ],
   "phases": [
@@ -113,7 +155,9 @@
           "dependsOn": [],
           "owner": "developer",
           "evidence": "inferred",
-          "sourceIds": ["obs-g"]
+          "sourceIds": [
+            "obs-g"
+          ]
         },
         {
           "id": "gm-2",
@@ -121,10 +165,15 @@
           "detail": "App name, logo, support email, homepage, privacy policy, terms, authorized domains. User type External.",
           "where": "https://console.cloud.google.com/auth/branding",
           "outcome": "Consent screen configured in Testing status.",
-          "dependsOn": ["gm-1"],
+          "dependsOn": [
+            "gm-1"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-brand", "g-audience"]
+          "sourceIds": [
+            "g-brand",
+            "g-audience"
+          ]
         },
         {
           "id": "gm-3",
@@ -132,10 +181,15 @@
           "detail": "Data access: add gmail.readonly and gmail.compose only. Clients: create a Web client with your redirect URIs.",
           "where": "https://console.cloud.google.com/auth/clients",
           "outcome": "Client ID and secret.",
-          "dependsOn": ["gm-2"],
+          "dependsOn": [
+            "gm-2"
+          ],
           "owner": "agent",
           "evidence": "documented",
-          "sourceIds": ["g-restricted", "obs-g"]
+          "sourceIds": [
+            "g-restricted",
+            "obs-g"
+          ]
         }
       ]
     },
@@ -148,10 +202,15 @@
           "detail": "Up to 100 test users; each one uses quota once added. Expect re-consent every 7 days because testing refresh tokens expire.",
           "where": "https://console.cloud.google.com/auth/audience",
           "outcome": "Read inbox and create a draft for a test user.",
-          "dependsOn": ["gm-3"],
+          "dependsOn": [
+            "gm-3"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-audience", "g-oauth2"]
+          "sourceIds": [
+            "g-audience",
+            "g-oauth2"
+          ]
         }
       ]
     },
@@ -164,10 +223,15 @@
           "detail": "Verify domains in Search Console, then Verify Branding. Required before data access verification.",
           "where": "https://search.google.com/search-console",
           "outcome": "Published branding status.",
-          "dependsOn": ["gm-2"],
+          "dependsOn": [
+            "gm-2"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-brand", "g-restricted"]
+          "sourceIds": [
+            "g-brand",
+            "g-restricted"
+          ]
         },
         {
           "id": "gm-6",
@@ -175,10 +239,16 @@
           "detail": "In the Verification Center: justification per scope, why narrower scopes won't work, unlisted YouTube demo video of the consent flow, permitted app type.",
           "where": "https://console.cloud.google.com/auth/verification",
           "outcome": "Google review of data access starts.",
-          "dependsOn": ["gm-5", "gm-4"],
+          "dependsOn": [
+            "gm-5",
+            "gm-4"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-restricted", "g-sensitive"]
+          "sourceIds": [
+            "g-restricted",
+            "g-sensitive"
+          ]
         },
         {
           "id": "gm-7",
@@ -186,10 +256,15 @@
           "detail": "Required because the agent reads mail on your servers. Done by a Google-empanelled assessor under the App Defense Alliance CASA framework.",
           "where": "https://appdefensealliance.dev/casa",
           "outcome": "Letter of Assessment sent to Google.",
-          "dependsOn": ["gm-6"],
+          "dependsOn": [
+            "gm-6"
+          ],
           "owner": "provider",
           "evidence": "documented",
-          "sourceIds": ["g-restricted", "g-casa"]
+          "sourceIds": [
+            "g-restricted",
+            "g-casa"
+          ]
         },
         {
           "id": "gm-8",
@@ -197,10 +272,15 @@
           "detail": "Switch publishing status to In production once verified; any Google user can then authorize without the unverified screen.",
           "where": "https://console.cloud.google.com/auth/audience",
           "outcome": "No 100-user cap, no 7-day token expiry from Testing status.",
-          "dependsOn": ["gm-7"],
+          "dependsOn": [
+            "gm-7"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-audience", "g-unverified"]
+          "sourceIds": [
+            "g-audience",
+            "g-unverified"
+          ]
         }
       ]
     },
@@ -213,10 +293,14 @@
           "detail": "Reverify and redo the security assessment at least every 12 months; adding a new restricted scope may need reassessment.",
           "where": "https://console.cloud.google.com/auth/verification",
           "outcome": "Restricted access kept.",
-          "dependsOn": ["gm-7"],
+          "dependsOn": [
+            "gm-7"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-restricted"]
+          "sourceIds": [
+            "g-restricted"
+          ]
         },
         {
           "id": "gm-10",
@@ -224,10 +308,14 @@
           "detail": "Use data only for the user-facing feature; no humans reading mail without explicit consent; no training general models.",
           "where": "https://developers.google.com/workspace/gmail/api/policy",
           "outcome": "Stays compliant between assessments.",
-          "dependsOn": ["gm-8"],
+          "dependsOn": [
+            "gm-8"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["g-gmail-policy"]
+          "sourceIds": [
+            "g-gmail-policy"
+          ]
         }
       ]
     }
@@ -239,7 +327,9 @@
       "nextAction": "Expected in testing; it ends only after moving to production.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["g-oauth2"]
+      "sourceIds": [
+        "g-oauth2"
+      ]
     },
     {
       "symptom": "Users see 'Google hasn't verified this app' and sign-ups stop at 100.",
@@ -247,7 +337,9 @@
       "nextAction": "Finish brand and restricted scope verification.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["g-unverified"]
+      "sourceIds": [
+        "g-unverified"
+      ]
     },
     {
       "symptom": "Verification rejected or stalled on use case.",
@@ -255,7 +347,10 @@
       "nextAction": "Frame the agent as productivity enhancement, request only readonly + compose, and show it in the demo video.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["g-gmail-policy", "g-restricted"]
+      "sourceIds": [
+        "g-gmail-policy",
+        "g-restricted"
+      ]
     },
     {
       "symptom": "Brand verification fails.",
@@ -263,7 +358,9 @@
       "nextAction": "Fix domain ownership and host the policy on the homepage domain.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["g-brand"]
+      "sourceIds": [
+        "g-brand"
+      ]
     },
     {
       "symptom": "Gmail access stops after a user changes password.",
@@ -271,7 +368,9 @@
       "nextAction": "Detect invalid_grant and prompt re-consent.",
       "owner": "agent",
       "evidence": "documented",
-      "sourceIds": ["g-oauth2"]
+      "sourceIds": [
+        "g-oauth2"
+      ]
     }
   ],
   "agentVsHuman": {

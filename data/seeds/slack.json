@@ -20,38 +20,59 @@
     "testingBeforeReview": {
       "text": "Yes. You can install in your own workspace without OAuth code, then activate public distribution to install in other workspaces without any review. Slack calls unlisted distribution suitable for pilots, not commercial distribution.",
       "evidence": "documented",
-      "sourceIds": ["sl-distribution"]
+      "sourceIds": [
+        "sl-distribution"
+      ]
     },
     "mainBlocker": {
       "text": "For apps created on or after 29 May 2025 that are commercially distributed outside the Marketplace, conversations.history and conversations.replies are limited to 1 request per minute and 15 objects per request. Marketplace apps are not affected.",
       "evidence": "documented",
-      "sourceIds": ["sl-ratechange"]
+      "sourceIds": [
+        "sl-ratechange"
+      ]
     },
-    "nextAction": "Create the app from a manifest with bot scopes channels:history and chat:write, install it in a dev workspace, then plan the Marketplace submission early."
+    "nextAction": "Create the app from a manifest with bot scopes channels:history and chat:write, install it in a dev workspace, then plan the Marketplace submission early.",
+    "managedOAuth": {
+      "status": "available",
+      "text": "Composio provides a managed OAuth app for Slack, so you can prototype without registering one. Users then see Composio's name on the consent screen and share its rate-limit quota, so an external launch usually brings its own app.",
+      "sourceIds": [
+        "composio-managed",
+        "composio-custom"
+      ]
+    }
   },
   "timing": {
     "activeWork": {
       "text": "About an hour to create the app, set scopes and redirect URL, and test install in a dev workspace; the Marketplace submission (listing, demo video, test account) is extra. Our estimate, not Slack's.",
       "evidence": "inferred",
-      "sourceIds": ["sl-distribution", "sl-review"]
+      "sourceIds": [
+        "sl-distribution",
+        "sl-review"
+      ]
     },
     "reviewWait": {
       "text": "No review is needed to distribute unlisted. Marketplace review, per Slack: preliminary part up to 10 business days for feedback, functional review up to 10 weeks for new submissions. Each resubmission in the preliminary part resets your queue place.",
       "evidence": "documented",
-      "sourceIds": ["sl-review"]
+      "sourceIds": [
+        "sl-review"
+      ]
     },
     "policyDeadlines": [
       {
         "text": "Marketplace submission is blocked until the app is installed on 10 or more active workspaces (used in the past 28 days).",
         "evidence": "documented",
-        "sourceIds": ["sl-review"]
+        "sourceIds": [
+          "sl-review"
+        ]
       }
     ],
     "costs": [
       {
         "text": "Slack does not charge for Marketplace inclusion.",
         "evidence": "documented",
-        "sourceIds": ["sl-ratechange"]
+        "sourceIds": [
+          "sl-ratechange"
+        ]
       }
     ]
   },
@@ -59,17 +80,24 @@
     {
       "text": "A Slack account and a development workspace you can install apps into.",
       "evidence": "documented",
-      "sourceIds": ["sl-distribution"]
+      "sourceIds": [
+        "sl-distribution"
+      ]
     },
     {
       "text": "An OAuth 2.0 (V2) install flow with an HTTPS redirect URL; all request URLs must support SSL.",
       "evidence": "documented",
-      "sourceIds": ["sl-distribution", "sl-oauth"]
+      "sourceIds": [
+        "sl-distribution",
+        "sl-oauth"
+      ]
     },
     {
       "text": "For Marketplace: a production-ready app, test account credentials for reviewers, and a demo video of install, OAuth, setup, use and uninstall.",
       "evidence": "documented",
-      "sourceIds": ["sl-review"]
+      "sourceIds": [
+        "sl-review"
+      ]
     }
   ],
   "permissions": [
@@ -78,21 +106,29 @@
       "enables": "Read messages in public channels the app has been added to, via conversations.history / conversations.replies.",
       "reviewImpact": "No review to request it, but unlisted commercial apps get 1 request/minute and 15 objects per call on these methods. Marketplace review analyses each scope against functionality.",
       "evidence": "documented",
-      "sourceIds": ["sl-scope-history", "sl-ratechange"]
+      "sourceIds": [
+        "sl-scope-history",
+        "sl-ratechange"
+      ]
     },
     {
       "scope": "chat:write (bot)",
       "enables": "Post messages as the bot with chat.postMessage.",
       "reviewImpact": "No review for unlisted. Posting is limited to about one message per second per channel, with short bursts allowed.",
       "evidence": "documented",
-      "sourceIds": ["sl-scope-chat", "sl-ratelimits"]
+      "sourceIds": [
+        "sl-scope-chat",
+        "sl-ratelimits"
+      ]
     },
     {
       "scope": "Bot token (xoxb) vs user token (xoxp)",
       "enables": "scope gives a bot token; user_scope gives a user token for acting as the user. This use case needs only the bot token.",
       "reviewImpact": "Fewer scopes means less to justify in Marketplace review.",
       "evidence": "documented",
-      "sourceIds": ["sl-oauth"]
+      "sourceIds": [
+        "sl-oauth"
+      ]
     }
   ],
   "phases": [
@@ -108,7 +144,10 @@
           "dependsOn": [],
           "owner": "developer",
           "evidence": "observed",
-          "sourceIds": ["obs-sl", "sl-distribution"]
+          "sourceIds": [
+            "obs-sl",
+            "sl-distribution"
+          ]
         },
         {
           "id": "sl-2",
@@ -116,10 +155,16 @@
           "detail": "OAuth & Permissions: bot scopes channels:history (plus groups:history if needed) and chat:write. Add your HTTPS redirect URL.",
           "where": "https://api.slack.com/apps",
           "outcome": "Install link requests only the needed scopes.",
-          "dependsOn": ["sl-1"],
+          "dependsOn": [
+            "sl-1"
+          ],
           "owner": "agent",
           "evidence": "documented",
-          "sourceIds": ["sl-oauth", "sl-scope-history", "sl-scope-chat"]
+          "sourceIds": [
+            "sl-oauth",
+            "sl-scope-history",
+            "sl-scope-chat"
+          ]
         },
         {
           "id": "sl-3",
@@ -127,10 +172,14 @@
           "detail": "Redirect to Slack with scope, receive code, exchange via oauth.v2.access, store the xoxb token per workspace.",
           "where": "https://docs.slack.dev/authentication/installing-with-oauth",
           "outcome": "Any workspace can install and you get a per-workspace bot token.",
-          "dependsOn": ["sl-2"],
+          "dependsOn": [
+            "sl-2"
+          ],
           "owner": "agent",
           "evidence": "documented",
-          "sourceIds": ["sl-oauth"]
+          "sourceIds": [
+            "sl-oauth"
+          ]
         }
       ]
     },
@@ -143,10 +192,15 @@
           "detail": "Invite the bot to a channel, read history and post. Test against 1 request/minute and limit=15 for history, since that is what new unlisted installs get.",
           "where": "https://api.slack.com/apps",
           "outcome": "Agent design works under the unlisted limits.",
-          "dependsOn": ["sl-3"],
+          "dependsOn": [
+            "sl-3"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["sl-ratechange", "sl-scope-history"]
+          "sourceIds": [
+            "sl-ratechange",
+            "sl-scope-history"
+          ]
         }
       ]
     },
@@ -159,10 +213,14 @@
           "detail": "Manage Distribution: complete the checklist, click Activate Public Distribution. You get an Add to Slack button and shareable URL. No review.",
           "where": "https://api.slack.com/apps",
           "outcome": "Pilot customers can install the unlisted app.",
-          "dependsOn": ["sl-4"],
+          "dependsOn": [
+            "sl-4"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["sl-distribution"]
+          "sourceIds": [
+            "sl-distribution"
+          ]
         },
         {
           "id": "sl-6",
@@ -170,10 +228,15 @@
           "detail": "Workspaces with 'Only allow pre-approved apps' route member requests to owners or app managers. Some workspaces only allow Marketplace apps.",
           "where": "https://slack.com/help/articles/222386767-Manage-app-approval-for-your-workspace",
           "outcome": "App installed in the customer workspace.",
-          "dependsOn": ["sl-5"],
+          "dependsOn": [
+            "sl-5"
+          ],
           "owner": "admin",
           "evidence": "documented",
-          "sourceIds": ["sl-approval", "sl-distribution"]
+          "sourceIds": [
+            "sl-approval",
+            "sl-distribution"
+          ]
         },
         {
           "id": "sl-7",
@@ -181,10 +244,14 @@
           "detail": "Required before you can submit to the Marketplace.",
           "where": "https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide",
           "outcome": "Eligible to submit.",
-          "dependsOn": ["sl-5"],
+          "dependsOn": [
+            "sl-5"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["sl-review"]
+          "sourceIds": [
+            "sl-review"
+          ]
         }
       ]
     },
@@ -197,10 +264,15 @@
           "detail": "Listing, scope reasons, test credentials, demo video. Preliminary review up to 10 business days, functional up to 10 weeks. Slack cannot accelerate it.",
           "where": "https://api.slack.com/apps",
           "outcome": "Listed app; Marketplace rate limits apply to history methods.",
-          "dependsOn": ["sl-7"],
+          "dependsOn": [
+            "sl-7"
+          ],
           "owner": "provider",
           "evidence": "documented",
-          "sourceIds": ["sl-review", "sl-ratechange"]
+          "sourceIds": [
+            "sl-review",
+            "sl-ratechange"
+          ]
         },
         {
           "id": "sl-9",
@@ -208,10 +280,14 @@
           "detail": "After listing, scope or redirect changes don't work until submitted and published; adding unreviewed scopes to the install link breaks installs. Users must reinstall for new scopes.",
           "where": "https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide",
           "outcome": "No broken installs.",
-          "dependsOn": ["sl-8"],
+          "dependsOn": [
+            "sl-8"
+          ],
           "owner": "developer",
           "evidence": "documented",
-          "sourceIds": ["sl-review"]
+          "sourceIds": [
+            "sl-review"
+          ]
         }
       ]
     }
@@ -223,7 +299,9 @@
       "nextAction": "Design for 1 request/minute now; get Marketplace approval to remove the restriction. Internal customer-built apps are not affected.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["sl-ratechange"]
+      "sourceIds": [
+        "sl-ratechange"
+      ]
     },
     {
       "symptom": "Marketplace submission is blocked.",
@@ -231,7 +309,9 @@
       "nextAction": "Run a pilot through unlisted distribution first.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["sl-review"]
+      "sourceIds": [
+        "sl-review"
+      ]
     },
     {
       "symptom": "Customer can't install: 'request to install' or Marketplace-only error.",
@@ -239,7 +319,10 @@
       "nextAction": "Give the customer's admin a security summary and scope list; Marketplace listing solves the Marketplace-only case.",
       "owner": "admin",
       "evidence": "documented",
-      "sourceIds": ["sl-approval", "sl-distribution"]
+      "sourceIds": [
+        "sl-approval",
+        "sl-distribution"
+      ]
     },
     {
       "symptom": "Bot can't read a channel's history.",
@@ -247,7 +330,9 @@
       "nextAction": "Have users invite the bot to each channel.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["sl-scope-history"]
+      "sourceIds": [
+        "sl-scope-history"
+      ]
     },
     {
       "symptom": "Policy risk for a commercial product shipped unlisted.",
@@ -255,7 +340,9 @@
       "nextAction": "Plan Marketplace submission as part of launch, not as an extra.",
       "owner": "developer",
       "evidence": "documented",
-      "sourceIds": ["sl-ratechange"]
+      "sourceIds": [
+        "sl-ratechange"
+      ]
     }
   ],
   "agentVsHuman": {

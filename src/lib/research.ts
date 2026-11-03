@@ -5,6 +5,7 @@ import { llmJson } from "./llm";
 import { search, searchConfigured } from "./search";
 import { Guide, PHASES, type Attempt, type Audience, type Guide as GuideT } from "./schema";
 import { getGuide } from "./store";
+import { checkManaged, MANAGED_URL } from "./composio";
 
 export type ResearchInput = {
   provider: string;
@@ -44,9 +45,13 @@ const slug = (s: string) =>
 
 /* ---------------------------------------------------------------- excerpts */
 
-function excerpt(page: FetchedPage, max = 6500): string {
+function excerpt(page: FetchedPage, max = 6500, extra?: RegExp): string {
   const paras = page.text.split(/\n+/).map((p) => p.trim()).filter((p) => p.length > 30);
-  const scored = paras.map((p, i) => ({ p, i, s: (p.match(new RegExp(KEYWORDS, "gi")) ?? []).length }));
+  const scored = paras.map((p, i) => ({
+    p,
+    i,
+    s: (p.match(new RegExp(KEYWORDS, "gi")) ?? []).length + (extra ? (p.match(new RegExp(extra, "gi")) ?? []).length * 2 : 0),
+  }));
   const keep = new Set<number>();
   let size = 0;
   for (const x of [...scored].sort((a, b) => b.s - a.s)) {
@@ -195,7 +200,8 @@ Rules:
 - route: "managed" only if a source shows a managed/shared OAuth app is available and suitable; "own_app" if the developer must register their own; "unresolved" if unclear.
 - steps: 5-12 steps, each with phase exactly one of ${JSON.stringify(PHASES)}, a direct official link in "where" when known, outcome, dependsOn (step ids), owner (agent|developer|admin|provider).
 - If OAuth support is not shown by the sources, set oauthSupported "unclear" or "no" and say so.
-- testingBeforeReview and mainBlocker are required: say plainly what the sources show, or "Not stated in the pages read".
+- testingBeforeReview, mainBlocker and reviewWait are required and need a verbatim quote + sourceIds whenever a source supports them; say "Not stated in the pages read" otherwise.
+- routeReason must use the managed OAuth check given above (managed availability vs. reasons to bring your own app for this audience).
 - permissions: list every scope the requested actions need (e.g. reading AND writing if both are asked), with exact scope names from the sources.
 - blockers: 2-5 realistic blockers for this use case and audience (e.g. redirect URI mismatch, plan/tier limits, admin approval, review rejection, rate limits), each grounded in a source where possible.
 - prerequisites: accounts, plan tier, admin role, HTTPS redirect URL, privacy policy, etc. as supported by sources.
@@ -278,6 +284,15 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
     }
   }
 
+  // Words from the requested actions (e.g. "cancel", "upload") steer link following and excerpts.
+  const STOP = new Set(["read", "write", "user", "users", "their", "them", "with", "from", "into", "that", "this", "behalf", "only", "data", "account", "accounts", "the", "and"]);
+  const actionWords = [...new Set(input.actions.toLowerCase().match(/[a-z]{4,}/g) ?? [])]
+    .filter((w) => !STOP.has(w))
+    .map((w) => w.replace(/(ing|ed|es|s)$/, ""))
+    .filter((w) => w.length >= 4)
+    .slice(0, 6);
+  const actionRe = actionWords.length ? new RegExp(actionWords.join("|"), "i") : undefined;
+
   /* 1. Resolve provider */
   step(`Resolving “${name}”${website ? ` (${host(website)})` : ""}`);
   let catalogEntry: CatalogEntry | undefined;
@@ -343,6 +358,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
   );
   const isOfficial = (u: string) => officialRoots.has(rootOf(host(u)));
   step(`Official domains: ${[...officialRoots].join(", ") || "unknown"}`);
+  const managedP = checkManaged(plan.providerName || name, catalogEntry?.key);
 
   /* 3. Gather candidate URLs */
   const queue: string[] = [];
@@ -409,7 +425,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
       for (const l of p.links) {
         const u = l.href.split("#")[0];
         if (tried.has(u) || !isOfficial(u) || links.size > 150) continue;
-        if (KEYWORDS.test(`${l.text} ${u}`)) links.set(u, l.text);
+        if (KEYWORDS.test(`${l.text} ${u}`) || actionRe?.test(`${l.text} ${u}`)) links.set(u, l.text);
       }
     if (!links.size) break;
     step(round === 0 ? "Checking permission, review and distribution requirements" : "Filling remaining gaps");
@@ -447,13 +463,17 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
 
   /* 6. Extract structured guide */
   if (left() < 30000) warn("Research time budget nearly used; writing guide from what was found");
+  const managed = await managedP;
+  if (managed.status === "available") step(`Composio's managed OAuth directory lists ${managed.toolkit!.name}: a managed app is available`);
+  else if (managed.status === "not_listed") step(`Not in Composio's managed OAuth list (${managed.count} toolkits): plan to bring your own OAuth app`);
+  else warn("Couldn't read Composio's managed OAuth directory");
   step("Preparing the guide from the sources read");
   const ranked = [...official, ...pages.filter((p) => !isOfficial(p.url))].slice(0, 12);
   const srcMap = new Map<string, FetchedPage>();
   const blocks = ranked.map((p, i) => {
     const id = `S${i + 1}`;
     srcMap.set(id, p);
-    return `[${id}] ${p.title || host(p.url)} | ${p.url} | ${isOfficial(p.url) ? "official" : "secondary"}\n${excerpt(p)}`;
+    return `[${id}] ${p.title || host(p.url)} | ${p.url} | ${isOfficial(p.url) ? "official" : "secondary"}\n${excerpt(p, 6500, actionRe)}`;
   });
 
   let ex: z.infer<typeof ExtractOut> | null = null;
@@ -461,7 +481,13 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
     try {
       const { json, model } = await llmJson(
         EXTRACT_SYSTEM,
-        `Provider: ${plan.providerName}\nIntended actions: ${input.actions}\nAudience: ${input.audience} (personal = only the developer/testing; internal = their own organisation; external = outside customers)\nDate: ${today()}\n\nSOURCES:\n${blocks.join("\n\n")}`,
+        `Provider: ${plan.providerName}\nIntended actions: ${input.actions}\nAudience: ${input.audience} (personal = only the developer/testing; internal = their own organisation; external = outside customers)\nDate: ${today()}\nManaged OAuth check (Composio's managed OAuth directory; when you mention it, call it "Composio's managed OAuth directory" and never mention source numbering): ${
+          managed.status === "available"
+            ? `Composio provides a managed OAuth app for ${managed.toolkit!.name}. Users would see Composio's app on the consent screen and share its rate-limit quota; use your own app for your name on the consent screen, custom scopes or a separate quota.`
+            : managed.status === "not_listed"
+              ? "Not listed as Composio-managed; the developer must bring their own OAuth app."
+              : "Unknown."
+        }\n\nSOURCES:\n${blocks.join("\n\n")}`,
         Math.max(30000, Math.min(120000, left() - 5000)),
       );
       ex = ExtractOut.parse(json);
@@ -495,6 +521,20 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
   const claim = (c: z.infer<typeof MClaim>) => ({ text: c.text, ...verify(c) });
 
   const id = `${slug(plan.providerName || name)}-${Date.now().toString(36)}`;
+  const managedClaim = () =>
+    managed.status === "unknown"
+      ? { status: "unknown" as const, text: "Could not read Composio's managed OAuth directory during this run.", sourceIds: [] as string[] }
+      : managed.status === "available"
+        ? {
+            status: "available" as const,
+            text: `Composio provides a managed OAuth app for ${managed.toolkit!.name}, so you can test and launch without registering one. Bring your own app to show your name on the consent screen, request custom scopes, or get a separate rate-limit quota.`,
+            sourceIds: ["C1"],
+          }
+        : {
+            status: "not_listed" as const,
+            text: `Not in Composio's list of ${managed.count} managed OAuth toolkits. Expect to register your own OAuth app (or the toolkit may not be on Composio yet).`,
+            sourceIds: ["C1"],
+          };
   const uncertainties: string[] = [];
   let guide: GuideT;
 
@@ -569,6 +609,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
         testingBeforeReview: claim(ex.testingBeforeReview),
         mainBlocker,
         nextAction: ex.nextAction,
+        managedOAuth: managedClaim(),
       },
       timing: {
         activeWork,
@@ -603,6 +644,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
       summary: {
         route: "unresolved",
         routeReason: "Research could not finish, so the route is not known yet.",
+        managedOAuth: managedClaim(),
         difficulty: "unknown",
         difficultyReason: "Not enough verified information.",
         testingBeforeReview: unv("Not verified."),
@@ -639,6 +681,15 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
     type: isOfficial(page.url) ? ("official" as const) : ("secondary" as const),
     note,
   }));
+  if (managed.status !== "unknown")
+    guide.sources.push({
+      id: "C1",
+      title: "Managed OAuth apps | Composio",
+      url: MANAGED_URL,
+      retrieved: today(),
+      type: "secondary",
+      note: managed.status === "available" ? `Listed under "Composio-managed OAuth available": ${managed.toolkit!.name}` : managed.intro.slice(0, 200),
+    });
   const known = new Set(guide.sources.map((s) => s.id));
   const clean = <T extends { sourceIds: string[] }>(x: T) => ({ ...x, sourceIds: x.sourceIds.filter((i) => known.has(i)) });
   guide.summary.testingBeforeReview = clean(guide.summary.testingBeforeReview);

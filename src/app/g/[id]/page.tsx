@@ -30,7 +30,7 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
   const d = DIFF[g.summary.difficulty];
 
   return (
-    <article className="grid gap-5">
+    <article className="grid min-w-0 gap-5 [&>*]:min-w-0">
       <div className="grid gap-2">
         <p className="text-sm text-muted">
           <Link href="/" className="underline">Guides</Link> / {g.provider.name}
@@ -52,17 +52,35 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
         )}
       </div>
 
+      <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+        How we know each claim:
+        <EvidenceTag e="observed" /> seen in a setup attempt
+        <EvidenceTag e="documented" /> quoted from official docs
+        <EvidenceTag e="secondary" /> non-provider source
+        <EvidenceTag e="inferred" /> reasoned from sources
+        <EvidenceTag e="unverified" /> not confirmed
+      </p>
+
       {/* Next action + summary */}
       <section className="rounded-lg border-2 border-accent bg-accent-soft p-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-accent">Next action</p>
         <p className="mt-1 text-lg font-medium">{g.summary.nextAction}</p>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 [&>*]:min-w-0">
         <div className="rounded-lg border border-line bg-panel p-4">
           <p className="text-xs text-muted">Recommended route</p>
           <p className="font-semibold">{ROUTE_LABEL[g.summary.route]}</p>
           <p className="mt-1 text-sm text-muted">{g.summary.routeReason}</p>
+          {g.summary.managedOAuth && (
+            <p className="mt-2 border-t border-line pt-2 text-sm">
+              <span className={`mr-1 text-xs font-semibold ${g.summary.managedOAuth.status === "available" ? "text-emerald-700 dark:text-emerald-300" : "text-muted"}`}>
+                {g.summary.managedOAuth.status === "available" ? "Managed app available on Composio." : g.summary.managedOAuth.status === "not_listed" ? "Not Composio-managed." : "Managed status unknown."}
+              </span>
+              {g.summary.managedOAuth.text}
+              <Cites ids={g.summary.managedOAuth.sourceIds} />
+            </p>
+          )}
         </div>
         <div className="rounded-lg border border-line bg-panel p-4">
           <p className="text-xs text-muted">Difficulty</p>
@@ -100,7 +118,7 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
         )}
       </Section>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 [&>*]:min-w-0">
         <Section title="Prerequisites">
           <ul className="grid list-disc gap-2 pl-5 text-sm">
             {g.prerequisites.map((p, i) => <li key={i}><ClaimLine c={p} /></li>)}

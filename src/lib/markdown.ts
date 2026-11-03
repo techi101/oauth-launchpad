@@ -20,6 +20,7 @@ export function toMarkdown(g: Guide, url = ""): string {
   L.push("");
   L.push(`## Summary`);
   L.push(`- **Route:** ${ROUTE[g.summary.route]}. ${g.summary.routeReason}`);
+  if (g.summary.managedOAuth) L.push(`- **Managed OAuth (Composio):** ${g.summary.managedOAuth.status}. ${g.summary.managedOAuth.text}${cite(g.summary.managedOAuth.sourceIds)}`);
   L.push(`- **Difficulty:** ${g.summary.difficulty}. ${g.summary.difficultyReason}`);
   L.push(`- **Testing before review:** ${c(g.summary.testingBeforeReview)}`);
   L.push(`- **Main launch blocker:** ${c(g.summary.mainBlocker)}`);

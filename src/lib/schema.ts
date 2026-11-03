@@ -119,6 +119,14 @@ export const Guide = z.object({
   summary: z.object({
     route: z.enum(["managed", "own_app", "unresolved"]),
     routeReason: z.string(),
+    /** Whether a managed OAuth platform (Composio) already provides the app. */
+    managedOAuth: z
+      .object({
+        status: z.enum(["available", "not_listed", "unknown"]),
+        text: z.string(),
+        sourceIds,
+      })
+      .optional(),
     difficulty: z.enum(["low", "medium", "high", "unknown"]),
     difficultyReason: z.string(),
     testingBeforeReview: Claim,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import ResearchForm from "@/components/ResearchForm";
 
 type Ev =
   | { type: "step"; text: string }
@@ -26,7 +27,7 @@ function Runner() {
   const base = sp.get("base") ?? undefined;
 
   useEffect(() => {
-    if (started.current) return;
+    if (started.current || !provider) return;
     started.current = true;
     const t0 = Date.now();
     const timer = setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 1000);
@@ -74,6 +75,16 @@ function Runner() {
     return () => clearInterval(timer);
   }, [provider, actions, audience, catalogKey, base, router]);
 
+  if (!provider)
+    return (
+      <div className="grid gap-4">
+        <h1 className="text-2xl font-semibold">Research an app</h1>
+        <div className="rounded-lg border border-line bg-panel p-5">
+          <ResearchForm />
+        </div>
+      </div>
+    );
+
   const sources = events.filter((e): e is Extract<Ev, { type: "source" }> => e.type === "source");
   const amb = events.find((e): e is Extract<Ev, { type: "ambiguous" }> => e.type === "ambiguous");
 
@@ -89,7 +100,7 @@ function Runner() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-6 md:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
         <section className="rounded-lg border border-line bg-panel p-5" aria-live="polite">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Agent activity</h2>

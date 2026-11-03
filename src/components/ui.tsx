@@ -54,7 +54,7 @@ export const ROUTE_LABEL: Record<string, string> = {
 
 export function Section({ id, title, children, hint }: { id?: string; title: string; children: React.ReactNode; hint?: string }) {
   return (
-    <section id={id} className="rounded-lg border border-line bg-panel p-5">
+    <section id={id} className="min-w-0 rounded-lg border border-line bg-panel p-4 sm:p-5">
       <h2 className="text-base font-semibold">{title}</h2>
       {hint && <p className="mt-0.5 text-sm text-muted">{hint}</p>}
       <div className="mt-3">{children}</div>

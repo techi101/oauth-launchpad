@@ -14,14 +14,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${sans.variable} ${mono.variable} antialiased min-h-screen`}>
+      <body className={`${sans.variable} ${mono.variable} antialiased min-h-screen overflow-x-hidden break-words`}>
         <header className="border-b border-line bg-panel">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
             <Link href="/" className="font-semibold tracking-tight">
               OAuth Launchpad
             </Link>
-            <nav className="flex gap-4 text-sm text-muted">
-              <Link href="/#research" className="hover:text-fg">Research an app</Link>
+            <nav className="flex gap-3 text-sm text-muted sm:gap-4">
+              <Link href="/#research" className="hover:text-fg">Research<span className="hidden sm:inline"> an app</span></Link>
               <Link href="/about" className="hover:text-fg">How it works</Link>
             </nav>
           </div>

@@ -3,6 +3,7 @@ import { assertPublicUrl, htmlToText, isPrivateIp } from "./safeFetch";
 import { quoteSupported } from "./research";
 import { matchCatalog, type CatalogEntry } from "./catalog";
 import { Guide } from "./schema";
+import { parseManagedList } from "./composio";
 import { toMarkdown } from "./markdown";
 import github from "../../data/seeds/github.json";
 import slack from "../../data/seeds/slack.json";
@@ -69,4 +70,16 @@ describe("seed guides", () => {
       expect(toMarkdown(g)).toContain(g.provider.name);
     });
   }
+});
+
+describe("Composio managed directory parsing", () => {
+  it("extracts toolkit names and slugs", () => {
+    const md =
+      "[![Image 15](https://logos.composio.dev/api/calendly) Calendly CALENDLY](https://docs.composio.dev/toolkits/calendly)" +
+      "[![Image 16](https://logos.composio.dev/api/capsule_crm) Capsule CRM CAPSULE_CRM](https://docs.composio.dev/toolkits/capsule_crm)";
+    expect(parseManagedList(md)).toEqual([
+      { name: "Calendly", slug: "calendly" },
+      { name: "Capsule CRM", slug: "capsule_crm" },
+    ]);
+  });
 });
