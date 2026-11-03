@@ -166,6 +166,8 @@ async function readerFetch(raw: string, timeoutMs: number): Promise<FetchedPage 
   });
   if (!res.ok) return null;
   const md = await readCapped(res);
+  // Jina reports the target's own HTTP failure in its header block; that page is an error page.
+  if (/^Warning: Target URL returned error \d{3}/m.test(md.slice(0, 1500))) return null;
   const title = md.match(/^Title:\s*(.+)$/m)?.[1]?.trim() ?? "";
   const links: { href: string; text: string }[] = [];
   const re = /\[([^\]]{0,120})\]\((https?:\/\/[^)\s]+)\)/g;
@@ -173,6 +175,18 @@ async function readerFetch(raw: string, timeoutMs: number): Promise<FetchedPage 
   while ((m = re.exec(md)) && links.length < 400) links.push({ text: m[1], href: m[2] });
   const text = md.replace(/\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g, "$1").replace(/!\[[^\]]*\]/g, "");
   return { url: raw, title, text, links, via: "reader" };
+}
+
+const ERROR_TITLE =
+  /\b(404|410|page not found|not found|page (does not|doesn'?t|no longer) exist|page unavailable|error \d{3}|something went wrong|access denied)\b/i;
+const ERROR_LEAD =
+  /\b(404|page not found|this page (does not|doesn'?t|no longer) exists?|we couldn'?t find (that|the|this) page|the page you('re| are) looking for)\b/i;
+
+/** Soft-404 detection: servers that return 200 for a "page not found" page. */
+export function looksLikeErrorPage(page: Pick<FetchedPage, "title" | "text">): boolean {
+  if (ERROR_TITLE.test(page.title)) return true;
+  const text = page.text.trim();
+  return text.length < 4000 && ERROR_LEAD.test(text.slice(0, 600));
 }
 
 export async function fetchPage(raw: string, timeoutMs = 12000): Promise<FetchedPage> {
@@ -188,6 +202,9 @@ export async function fetchPage(raw: string, timeoutMs = 12000): Promise<Fetched
     }
   } catch (e) {
     err = e;
+    // The page doesn't exist: don't ask the reader to render the error page. (403/5xx can be bot
+    // blocking, so those still try the reader, which reports the target's own error status.)
+    if (e instanceof Error && /^HTTP (404|410)\b/.test(e.message)) throw e;
   }
   if (!page || page.text.length < 1200) {
     try {

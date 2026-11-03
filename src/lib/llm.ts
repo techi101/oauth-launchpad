@@ -74,15 +74,17 @@ async function deepseek(system: string, user: string, timeoutMs: number): Promis
   return extractJson(data?.choices?.[0]?.message?.content ?? "");
 }
 
+/** All attempts (Gemini rotation, DeepSeek, last resort) share one deadline: the call never runs past timeoutMs. */
 export async function llmJson(system: string, user: string, timeoutMs = 90000): Promise<LlmResult> {
   const errors: string[] = [];
+  const started = Date.now();
+  const left = () => timeoutMs - (Date.now() - started);
   if (process.env.GEMINI_API_KEY) {
     const models = (process.env.GEMINI_MODELS || DEFAULT_MODELS)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     // Free-tier models return 503/429 under load: try each model, retry the list once after a pause.
-    const started = Date.now();
     const reserve = process.env.DEEPSEEK_API_KEY ? Math.min(60000, timeoutMs / 2) : 0; // leave time for the fallback
     const passes = process.env.DEEPSEEK_API_KEY ? 2 : 6;
     for (let pass = 0; pass < passes; pass++) {
@@ -100,19 +102,20 @@ export async function llmJson(system: string, user: string, timeoutMs = 90000): 
       await new Promise((r) => setTimeout(r, wait));
     }
   }
-  if (process.env.DEEPSEEK_API_KEY) {
+  if (process.env.DEEPSEEK_API_KEY && left() >= 8000) {
     try {
-      return { json: await deepseek(system, user, timeoutMs), model: "deepseek-chat" };
+      return { json: await deepseek(system, user, left()), model: "deepseek-chat" };
     } catch (e) {
       errors.push(String((e as Error).message));
     }
   }
-  if (process.env.GEMINI_API_KEY && LAST_RESORT) {
+  if (process.env.GEMINI_API_KEY && LAST_RESORT && left() >= 8000) {
     try {
-      return { json: await gemini(LAST_RESORT, system, user, Math.max(20000, timeoutMs - 20000)), model: LAST_RESORT };
+      return { json: await gemini(LAST_RESORT, system, user, left()), model: LAST_RESORT };
     } catch (e) {
       errors.push(String((e as Error).message));
     }
   }
+  if (llmConfigured() && left() < 8000) errors.push(`Model calls stopped at the ${Math.round(timeoutMs / 1000)}s deadline`);
   throw new Error(errors.length ? [...new Set(errors)].join("; ") : "No model API key configured");
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { loadCatalog, matchCatalog, type CatalogEntry } from "./catalog";
-import { assertPublicUrl, fetchPage, type FetchedPage } from "./safeFetch";
+import { getDomain } from "tldts";
+import { assertPublicUrl, fetchPage, looksLikeErrorPage, type FetchedPage } from "./safeFetch";
 import { llmJson } from "./llm";
 import { search, searchConfigured } from "./search";
 import { Guide, PHASES, type Attempt, type Audience, type Guide as GuideT } from "./schema";
@@ -39,7 +40,11 @@ const host = (u: string) => {
     return "";
   }
 };
-const rootOf = (h: string) => h.split(".").slice(-2).join(".");
+/** Registrable domain via the Public Suffix List: developer.xero.co.uk -> xero.co.uk, a.github.io stays a.github.io. */
+export const rootOf = (h: string) => {
+  const clean = h.trim().toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+  return getDomain(clean, { allowPrivateDomains: true }) ?? clean;
+};
 const slug = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "app";
 
@@ -66,21 +71,17 @@ function excerpt(page: FetchedPage, max = 6500, extra?: RegExp): string {
 const normText = (s: string) =>
   s.toLowerCase().replace(/[‘’“”"'`*_]/g, "").replace(/[^a-z0-9%]+/g, " ").trim();
 
-/** True when the quote really appears in the page (exact after normalising, or most 6-word shingles match). */
+/**
+ * True only when every word of the quote appears verbatim in the page (after normalising case,
+ * punctuation and whitespace). An ellipsis may join excerpts, but each excerpt must match exactly
+ * and be at least 4 words, so nothing can be appended or invented between real text.
+ */
 export function quoteSupported(quote: string, pageText: string): boolean {
-  const q = normText(quote);
-  if (q.length < 12) return false;
+  if (normText(quote).length < 12) return false;
   const p = normText(pageText);
-  if (p.includes(q)) return true;
-  const w = q.split(" ");
-  if (w.length < 8) return false;
-  let hit = 0;
-  let total = 0;
-  for (let i = 0; i + 6 <= w.length; i += 3) {
-    total++;
-    if (p.includes(w.slice(i, i + 6).join(" "))) hit++;
-  }
-  return total > 0 && hit / total >= 0.6;
+  const parts = quote.split(/\.\.\.|…|\[\s*…?\s*\]/).map(normText).filter(Boolean);
+  if (!parts.length) return false;
+  return parts.every((s) => s.split(" ").length >= 4 && p.includes(s));
 }
 
 /* ---------------------------------------------------------- model schemas */
@@ -476,7 +477,9 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
       const res = await Promise.allSettled(todo.slice(i, i + 4).map((u) => fetchPage(u)));
       res.forEach((r, j) => {
         const u = todo[i + j];
-        if (r.status === "fulfilled" && r.value.text.length > 300) {
+        if (r.status === "fulfilled" && looksLikeErrorPage(r.value)) {
+          log.push(`Skipped ${u}: looks like an error or "page not found" page`);
+        } else if (r.status === "fulfilled" && r.value.text.length > 300) {
           if (pages.some((p) => p.url === r.value.url)) return;
           pages.push(r.value);
           emit({ type: "source", title: r.value.title || host(u), url: r.value.url, official: isOfficial(r.value.url) });

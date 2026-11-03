@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { assertPublicUrl, htmlToText, isPrivateIp } from "./safeFetch";
-import { quoteSupported, scrub } from "./research";
+import { assertPublicUrl, htmlToText, isPrivateIp, looksLikeErrorPage } from "./safeFetch";
+import { quoteSupported, rootOf, scrub } from "./research";
 import { matchCatalog, type CatalogEntry } from "./catalog";
 import { Guide } from "./schema";
 import { findToolkit, parseManagedList, SNAPSHOT } from "./composio";
@@ -33,6 +33,39 @@ describe("quote verification", () => {
   it("rejects invented quotes", () => {
     expect(quoteSupported("review is completed within 3 to 5 business days by our team", page)).toBe(false);
     expect(quoteSupported("short", page)).toBe(false);
+  });
+  it("rejects a real quote with an invented sentence appended", () => {
+    const real = "it must undergo a Security Assessment by an independent assessor";
+    expect(quoteSupported(`${real}. The assessment costs $99 and takes one day.`, page)).toBe(false);
+    expect(quoteSupported(`${real}, which costs $99`, page)).toBe(false);
+  });
+  it("accepts real excerpts joined by an ellipsis, but not an invented excerpt", () => {
+    const words = page.split(/\s+/);
+    const a = words.slice(0, 6).join(" ");
+    const b = "it must undergo a Security Assessment";
+    expect(quoteSupported(`${a} ... ${b}`, page)).toBe(true);
+    expect(quoteSupported(`${a} ... the review is free for every app`, page)).toBe(false);
+  });
+});
+
+describe("official domain matching", () => {
+  it("uses the public suffix list", () => {
+    expect(rootOf("developer.xero.co.uk")).toBe("xero.co.uk");
+    expect(rootOf("www.bbc.co.uk")).toBe("bbc.co.uk");
+    expect(rootOf("developer.xero.co.uk")).not.toBe(rootOf("www.bbc.co.uk"));
+    expect(rootOf("developers.notion.com")).toBe("notion.com");
+    expect(rootOf("someone.github.io")).not.toBe(rootOf("other.github.io"));
+  });
+});
+
+describe("error page detection", () => {
+  it("flags soft-404 pages", () => {
+    expect(looksLikeErrorPage({ title: "Page Not Found | Calendly", text: "x".repeat(5000) })).toBe(true);
+    expect(looksLikeErrorPage({ title: "Calendly", text: "Sorry, this page doesn't exist. Go back home." })).toBe(true);
+  });
+  it("keeps real docs pages that mention 404 errors", () => {
+    const docs = "OAuth scopes and errors. ".repeat(40) + " A 404 Not Found response means the event no longer exists.";
+    expect(looksLikeErrorPage({ title: "Errors | Calendly Developer", text: docs })).toBe(false);
   });
 });
 
