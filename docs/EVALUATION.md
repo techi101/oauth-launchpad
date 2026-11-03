@@ -30,6 +30,7 @@
 - **Unparseable model output:** the model sometimes returned plain strings, or numbers where objects were expected, and the whole guide failed to parse. Parsing is now tolerant: plain strings are wrapped with no quote (so they can never count as *Documented*) and bad list items are dropped.
 - **Wrong "Partial" label:** Dropbox was marked Partial because the model answered "OAuth: unclear", even though Nango lists it as OAuth2 and it quoted OAuth steps. OAuth support now also counts when the catalog says OAuth2, official pages were read, and at least 3 claims are documented. The log records when this rule applied.
 - **Weak first draft:** the first Calendly draft (Flash-Lite) had one scope and no blockers. Stronger models are now tried first, and the prompt requires every scope the actions need and 2–5 blockers. The redo had both scopes, 5 blockers and 25/25 quotes matched.
+- **OAuth-support rule too narrow:** an adapted Gmail run on production (send only, testing) came out "Unresolved" because the rule only counted quotes in four fields. It now counts verified quotes anywhere in the guide. The rerun says register your own app, with `gmail.send` marked sensitive. The bad run was removed from the library.
 - **Model outages:** the free Gemini tier returned 503 on long requests for minutes at a time. Added retries across models, a pause between tries, and the DeepSeek backup.
 
 ## Still unverified or known gaps
