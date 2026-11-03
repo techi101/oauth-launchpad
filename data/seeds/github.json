@@ -1,0 +1,369 @@
+{
+  "id": "github",
+  "kind": "seed",
+  "status": "complete",
+  "createdAt": "2026-11-03",
+  "provider": {
+    "name": "GitHub",
+    "website": "https://github.com",
+    "developerPortal": "https://github.com/settings/developers"
+  },
+  "useCase": {
+    "actions": "Read repositories and create issues on behalf of users",
+    "audience": "external"
+  },
+  "summary": {
+    "route": "own_app",
+    "routeReason": "Composio lists GitHub among toolkits with Composio-managed OAuth, so you can prototype without registering anything. For an external launch you want your own app: with the managed app users see Composio's name on the consent screen and you share Composio's rate-limit quota. Registering your own GitHub App is free and has no provider review.",
+    "difficulty": "low",
+    "difficultyReason": "Registration is self-serve with no GitHub review. The real work is choosing GitHub App vs OAuth App and handling customers' organization policies (OAuth App restrictions, owner approval for installs).",
+    "testingBeforeReview": {
+      "text": "There is no review gate. Once registered, the app works immediately for any GitHub user who authorizes it (or any account that installs it, for a public GitHub App).",
+      "evidence": "inferred",
+      "sourceIds": ["gh-create-oauth", "gh-register-app"]
+    },
+    "mainBlocker": {
+      "text": "Customer organizations. New orgs have OAuth App access restrictions on by default, so an OAuth App cannot touch org repos until an org owner approves it. GitHub Apps avoid this policy but still need an org owner to install them.",
+      "evidence": "documented",
+      "sourceIds": ["gh-oauth-restrictions", "gh-request-app", "gh-differences"]
+    },
+    "nextAction": "Register a GitHub App (public, 'Any account') with Contents: read, Issues: read and write, Metadata: read, and 'Request user authorization (OAuth) during installation' turned on."
+  },
+  "timing": {
+    "activeWork": {
+      "text": "Roughly 30 to 60 minutes to register the app, set permissions and callback URL, and test one install. This is our estimate, not a GitHub figure.",
+      "evidence": "inferred",
+      "sourceIds": ["gh-register-app"]
+    },
+    "reviewWait": {
+      "text": "None for using the app: GitHub's registration docs describe no review step. Only an optional Marketplace listing is reviewed; provider does not publish a turnaround we could verify for that.",
+      "evidence": "inferred",
+      "sourceIds": ["gh-create-oauth", "gh-register-app", "gh-marketplace"]
+    },
+    "policyDeadlines": [],
+    "costs": [
+      {
+        "text": "Registering an OAuth App or GitHub App is free. Paid Marketplace plans require publisher verification and financial onboarding.",
+        "evidence": "documented",
+        "sourceIds": ["gh-marketplace"]
+      }
+    ]
+  },
+  "prerequisites": [
+    {
+      "text": "A GitHub account (personal or organization) to own the app. Prefer an organization account so ownership does not sit with one person; only organization-owned apps can sell paid Marketplace plans.",
+      "evidence": "documented",
+      "sourceIds": ["gh-marketplace"]
+    },
+    {
+      "text": "A public homepage URL and an HTTPS callback URL for your OAuth redirect.",
+      "evidence": "documented",
+      "sourceIds": ["gh-create-oauth", "gh-register-app"]
+    },
+    {
+      "text": "A globally unique app name of at most 34 characters (GitHub Apps).",
+      "evidence": "documented",
+      "sourceIds": ["gh-register-app"]
+    }
+  ],
+  "permissions": [
+    {
+      "scope": "GitHub App: Contents (read), Metadata (read)",
+      "enables": "Read repository files and metadata in repos the user/org chose at install time.",
+      "reviewImpact": "No review. Users and org owners see and approve the permission list at install.",
+      "evidence": "documented",
+      "sourceIds": ["gh-register-app", "gh-differences"]
+    },
+    {
+      "scope": "GitHub App: Issues (read and write)",
+      "enables": "Create issues. With a user access token the issue is attributed to the user.",
+      "reviewImpact": "No review. A user token only has permissions both the user and the app have.",
+      "evidence": "documented",
+      "sourceIds": ["gh-user-token"]
+    },
+    {
+      "scope": "OAuth App alternative: repo",
+      "enables": "Full read and write access to all public and private repos the user can reach. There is no read-only private repo scope.",
+      "reviewImpact": "No review, but this is far broader than the use case needs and org restrictions apply.",
+      "evidence": "documented",
+      "sourceIds": ["gh-scopes"]
+    }
+  ],
+  "phases": [
+    {
+      "name": "Register & configure",
+      "steps": [
+        {
+          "id": "gh-1",
+          "title": "Choose GitHub App over OAuth App",
+          "detail": "GitHub says GitHub Apps are generally preferred: fine-grained permissions, per-repo selection, short-lived tokens, higher rate limits. Use an OAuth App only if you need enterprise-level resources.",
+          "where": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+          "outcome": "Decision recorded: GitHub App.",
+          "dependsOn": [],
+          "owner": "developer",
+          "evidence": "documented",
+          "sourceIds": ["gh-differences"]
+        },
+        {
+          "id": "gh-2",
+          "title": "Register the GitHub App",
+          "detail": "Developer settings > GitHub Apps > New GitHub App. Fill name, homepage, callback URL (up to 10), webhook URL and secret if used. Pick 'Any account' so customers can install it.",
+          "where": "https://github.com/settings/apps/new",
+          "outcome": "App ID, client ID, client secret, private key.",
+          "dependsOn": ["gh-1"],
+          "owner": "developer",
+          "evidence": "documented",
+          "sourceIds": ["gh-register-app", "obs-gh"]
+        },
+        {
+          "id": "gh-3",
+          "title": "Set minimum permissions and user authorization",
+          "detail": "Contents: read, Issues: read and write, Metadata: read. Turn on 'Request user authorization (OAuth) during installation' so actions are attributed to the user. Keep expiring user tokens on.",
+          "where": "https://github.com/settings/apps",
+          "outcome": "App requests only what the use case needs.",
+          "dependsOn": ["gh-2"],
+          "owner": "developer",
+          "evidence": "documented",
+          "sourceIds": ["gh-register-app", "gh-user-token"]
+        }
+      ]
+    },
+    {
+      "name": "Test",
+      "steps": [
+        {
+          "id": "gh-4",
+          "title": "Install on a test account and run the user OAuth flow",
+          "detail": "Install on your own account or a test org, select repos, authorize, then read a repo and create an issue with the user access token.",
+          "where": "https://github.com/settings/installations",
+          "outcome": "Issue created and attributed to the test user.",
+          "dependsOn": ["gh-3"],
+          "owner": "developer",
+          "evidence": "inferred",
+          "sourceIds": ["gh-user-token"]
+        },
+        {
+          "id": "gh-5",
+          "title": "Implement token refresh",
+          "detail": "User access tokens expire after 8 hours by default; refresh tokens expire after 6 months. Store and rotate them.",
+          "where": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app",
+          "outcome": "Agent keeps working past 8 hours without re-consent.",
+          "dependsOn": ["gh-4"],
+          "owner": "agent",
+          "evidence": "documented",
+          "sourceIds": ["gh-user-token"]
+        }
+      ]
+    },
+    {
+      "name": "Launch to external users",
+      "steps": [
+        {
+          "id": "gh-6",
+          "title": "Share the public install link",
+          "detail": "Public GitHub Apps get an install page at https://github.com/apps/APP-NAME/installations/new. No Marketplace listing is needed to distribute it.",
+          "where": "https://docs.github.com/en/apps/using-github-apps/requesting-a-github-app-from-your-organization-owner",
+          "outcome": "Customers can install without you.",
+          "dependsOn": ["gh-4"],
+          "owner": "developer",
+          "evidence": "inferred",
+          "sourceIds": ["gh-request-app", "gh-register-app"]
+        },
+        {
+          "id": "gh-7",
+          "title": "Customer org owner installs or approves",
+          "detail": "Members without install rights trigger an email request to the org owner, who can change selected repos and decide. If you shipped an OAuth App instead, the owner must approve it under OAuth App access restrictions.",
+          "where": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/about-oauth-app-access-restrictions",
+          "outcome": "App can reach the org's chosen repos.",
+          "dependsOn": ["gh-6"],
+          "owner": "admin",
+          "evidence": "documented",
+          "sourceIds": ["gh-request-app", "gh-oauth-restrictions"]
+        }
+      ]
+    },
+    {
+      "name": "Review & ongoing",
+      "steps": [
+        {
+          "id": "gh-8",
+          "title": "Optional: list on GitHub Marketplace",
+          "detail": "Separate from using the app. Free listings meet general requirements; paid plans need publisher verification (org-owned apps only).",
+          "where": "https://docs.github.com/en/apps/github-marketplace/github-marketplace-overview/about-github-marketplace-for-apps",
+          "outcome": "Discoverability; not required for access.",
+          "dependsOn": ["gh-6"],
+          "owner": "developer",
+          "evidence": "documented",
+          "sourceIds": ["gh-marketplace"]
+        },
+        {
+          "id": "gh-9",
+          "title": "Treat permission changes as re-approval events",
+          "detail": "Adding permissions later means installers must accept the new set. Start minimal and add deliberately.",
+          "where": "https://github.com/settings/apps",
+          "outcome": "No surprise breakage for customers.",
+          "dependsOn": ["gh-3"],
+          "owner": "developer",
+          "evidence": "inferred",
+          "sourceIds": ["gh-register-app"]
+        }
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "symptom": "OAuth App works on personal repos but gets nothing from a customer's org repos.",
+      "cause": "OAuth App access restrictions are on by default for new orgs; members cannot authorize unapproved OAuth Apps for org resources.",
+      "nextAction": "Ask the user to request owner approval, or switch to a GitHub App, which org application policies do not cover.",
+      "owner": "admin",
+      "evidence": "documented",
+      "sourceIds": ["gh-oauth-restrictions", "gh-differences"]
+    },
+    {
+      "symptom": "User can't install the GitHub App on their org.",
+      "cause": "Only org owners (or delegated app managers) can install; members can only request.",
+      "nextAction": "Tell users their owner gets an email request; provide a short note they can forward.",
+      "owner": "admin",
+      "evidence": "documented",
+      "sourceIds": ["gh-request-app"]
+    },
+    {
+      "symptom": "Calls start failing with 401 after a few hours.",
+      "cause": "User access tokens expire after 8 hours by default.",
+      "nextAction": "Use the refresh token; re-prompt only if the 6-month refresh token expired.",
+      "owner": "agent",
+      "evidence": "documented",
+      "sourceIds": ["gh-user-token"]
+    },
+    {
+      "symptom": "Rate limits hit at scale with an OAuth App.",
+      "cause": "GitHub says OAuth Apps have lower rate limits and do not scale; GitHub App limits grow with installation size.",
+      "nextAction": "Use a GitHub App.",
+      "owner": "developer",
+      "evidence": "documented",
+      "sourceIds": ["gh-differences"]
+    }
+  ],
+  "agentVsHuman": {
+    "agentCan": [
+      "Draft the permission list from the use case (Contents read, Issues write, Metadata read)",
+      "Fill homepage, callback URLs and webhook URL values",
+      "Write the token refresh and storage code",
+      "Draft the note users forward to their org owner asking for install approval"
+    ],
+    "humanMust": [
+      "Log in to GitHub (with 2FA) and click Create on the registration form",
+      "Download and store the private key and client secret",
+      "Decide which account owns the app (personal vs organization)",
+      "As the customer's org owner, approve or install the app"
+    ]
+  },
+  "sources": [
+    {
+      "id": "gh-differences",
+      "title": "Differences between GitHub Apps and OAuth apps",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "\"In general, GitHub Apps are preferred over OAuth apps.\" \"OAuth apps have lower rate limits and do not scale.\""
+    },
+    {
+      "id": "gh-oauth-restrictions",
+      "title": "About OAuth app access restrictions",
+      "url": "https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/about-oauth-app-access-restrictions",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "\"When you create a new organization, OAuth app access restrictions are enabled by default.\""
+    },
+    {
+      "id": "gh-create-oauth",
+      "title": "Creating an OAuth app",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "Self-serve form; \"up to 100 OAuth apps\"; \"up to 10 callback URLs\"; expiring user tokens enabled by default. No review step described."
+    },
+    {
+      "id": "gh-register-app",
+      "title": "Registering a GitHub App",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "Name unique, max 34 chars; up to 10 callback URLs; 'Only on this account' vs 'Any account'. No review step described."
+    },
+    {
+      "id": "gh-user-token",
+      "title": "Generating a user access token for a GitHub App",
+      "url": "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "\"only has permissions that both the user and the app have\"; expires after 8 hours; refresh token \"expires after 6 months\"."
+    },
+    {
+      "id": "gh-request-app",
+      "title": "Requesting a GitHub App from your organization owner",
+      "url": "https://docs.github.com/en/apps/using-github-apps/requesting-a-github-app-from-your-organization-owner",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "Without install permission, \"GitHub will send an email to the organization owner\"; owner chooses whether to install."
+    },
+    {
+      "id": "gh-scopes",
+      "title": "Scopes for OAuth apps",
+      "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "repo: \"Grants full access to public and private repositories\". No read-only private repo scope listed."
+    },
+    {
+      "id": "gh-marketplace",
+      "title": "About GitHub Marketplace for apps",
+      "url": "https://docs.github.com/en/apps/github-marketplace/github-marketplace-overview/about-github-marketplace-for-apps",
+      "retrieved": "2026-11-03",
+      "type": "official",
+      "note": "Paid plans: \"you must complete the publisher verification process.\" Publishing is described as a way to share, not a requirement."
+    },
+    {
+      "id": "composio-managed",
+      "title": "Composio: toolkits with managed auth",
+      "url": "https://docs.composio.dev/toolkits/managed-auth",
+      "retrieved": "2026-11-03",
+      "type": "secondary",
+      "note": "GitHub (GITHUB) listed under \"Composio-managed OAuth available\"."
+    },
+    {
+      "id": "composio-custom",
+      "title": "Composio: managed vs custom auth",
+      "url": "https://docs.composio.dev/docs/authentication/custom-app-vs-managed-app",
+      "retrieved": "2026-11-03",
+      "type": "secondary",
+      "note": "Managed: \"Users see Composio's app name during OAuth.\" \"Managed apps share quota across all Composio users.\""
+    },
+    {
+      "id": "obs-gh",
+      "title": "Unauthenticated request to GitHub App and OAuth App registration pages",
+      "url": "https://github.com/settings/apps/new",
+      "retrieved": "2026-11-03",
+      "type": "observation",
+      "note": "HTTP 302 to github.com/login?return_to=... for both /settings/apps/new and /settings/applications/new."
+    }
+  ],
+  "attempts": [
+    {
+      "date": "2026-11-03",
+      "intended": "Open the GitHub App and OAuth App registration forms to confirm fields.",
+      "attempted": "curl -sI https://github.com/settings/apps/new and https://github.com/settings/applications/new without a session.",
+      "result": "Both returned HTTP 302 Found with Location https://github.com/login?return_to=<the page>.",
+      "stoppedAt": "GitHub login page. We did not log in or submit anything.",
+      "proves": "Both forms exist at these URLs and require a signed-in GitHub account.",
+      "doesNotProve": "The current form fields or that registration succeeds; fields come from GitHub docs, not from the live form.",
+      "correction": "GitHub OAuth App docs now allow up to 10 callback URLs and enable expiring user tokens by default; older guides say one callback URL and non-expiring tokens."
+    }
+  ],
+  "uncertainties": [
+    "Composio's managed GitHub app: we did not verify whether it is a GitHub App or OAuth App, so how org restrictions affect it is unknown.",
+    "Marketplace listing review turnaround is not published on the page we fetched."
+  ],
+  "conflicts": [],
+  "researchLog": []
+}

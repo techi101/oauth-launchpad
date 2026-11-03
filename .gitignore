@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local generated guides
+.data/
+.env*.local
+.env
+!.env.example
+.vercel
+.env*
