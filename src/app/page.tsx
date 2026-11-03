@@ -1,8 +1,10 @@
+import Link from "next/link";
 import GuideGrid from "@/components/GuideGrid";
 import ResearchForm from "@/components/ResearchForm";
 import { llmConfigured } from "@/lib/llm";
 import { SEEDS } from "@/lib/seeds";
 import { listGenerated, toCard } from "@/lib/store";
+import { SNAPSHOT } from "@/lib/composio";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,12 @@ export default async function Home() {
       </section>
 
       <GuideGrid seeds={SEEDS.map(toCard)} generated={generated} />
+
+      <p className="-mt-4 text-sm text-muted">
+        Building on Composio? {SNAPSHOT.stats.bringYourOwn} of its {SNAPSHOT.stats.oauthToolkits} OAuth toolkits need your own app.{" "}
+        <Link href="/coverage" className="text-accent underline">See which, and what this library covers next</Link>. Agents can read every guide as{" "}
+        <a href="/llms.txt" className="underline">llms.txt</a> or <a href="/api/guides" className="underline">JSON</a>.
+      </p>
 
       <section id="research" className="rounded-lg border border-line bg-panel p-5">
         <h2 className="text-lg font-semibold">Research an app</h2>

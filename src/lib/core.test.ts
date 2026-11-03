@@ -3,7 +3,8 @@ import { assertPublicUrl, htmlToText, isPrivateIp } from "./safeFetch";
 import { quoteSupported } from "./research";
 import { matchCatalog, type CatalogEntry } from "./catalog";
 import { Guide } from "./schema";
-import { parseManagedList } from "./composio";
+import { findToolkit, parseManagedList, SNAPSHOT } from "./composio";
+import { freshness } from "./freshness";
 import { toMarkdown } from "./markdown";
 import github from "../../data/seeds/github.json";
 import slack from "../../data/seeds/slack.json";
@@ -81,5 +82,31 @@ describe("Composio managed directory parsing", () => {
       { name: "Calendly", slug: "calendly" },
       { name: "Capsule CRM", slug: "capsule_crm" },
     ]);
+  });
+});
+
+describe("Composio snapshot", () => {
+  it("matches providers to toolkits, including display names with qualifiers", () => {
+    expect(findToolkit("Gmail (Google)")?.slug).toBe("gmail");
+    expect(findToolkit("Xero")?.managed).toBe(false);
+    expect(findToolkit("Calendly")?.managed).toBe(true);
+    expect(findToolkit("Flurbix")).toBeUndefined();
+  });
+  it("has consistent stats", () => {
+    const s = SNAPSHOT.stats;
+    expect(s.managed + s.bringYourOwn).toBe(s.oauthToolkits);
+    expect(SNAPSHOT.toolkits.length).toBe(s.oauthToolkits);
+  });
+});
+
+describe("freshness", () => {
+  it("staggers review dates and flags overdue guides", () => {
+    const now = new Date("2026-11-04T00:00:00Z");
+    const a = freshness({ id: "a", createdAt: "2026-11-03" }, now);
+    const b = freshness({ id: "zz-other", createdAt: "2026-11-03" }, now);
+    expect(a.verified).toBe("2026-11-03");
+    expect(a.due).toBe(false);
+    expect(freshness({ id: "a", createdAt: "2026-01-01" }, now).due).toBe(true);
+    expect([a.nextReview, b.nextReview].every((d) => d > "2026-11-25" && d < "2026-12-11")).toBe(true);
   });
 });

@@ -5,7 +5,7 @@ import { llmJson } from "./llm";
 import { search, searchConfigured } from "./search";
 import { Guide, PHASES, type Attempt, type Audience, type Guide as GuideT } from "./schema";
 import { getGuide } from "./store";
-import { checkManaged, MANAGED_URL } from "./composio";
+import { checkManaged, MANAGED_URL, SNAPSHOT } from "./composio";
 
 export type ResearchInput = {
   provider: string;
@@ -259,6 +259,44 @@ async function oidcProbe(authUrl: string): Promise<Attempt | null> {
   }
 }
 
+/** Hit the authorize endpoint with a client_id that cannot exist: shows whether the provider rejects unregistered apps. */
+async function authorizeProbe(authUrl: string): Promise<Attempt | null> {
+  let u: URL;
+  try {
+    u = new URL(authUrl);
+  } catch {
+    return null;
+  }
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("client_id", "oauth-launchpad-probe-unregistered");
+  u.searchParams.set("redirect_uri", "https://example.com/callback");
+  u.searchParams.set("state", "probe");
+  try {
+    await assertPublicUrl(u.toString());
+    const res = await fetch(u, { redirect: "manual", headers: { "user-agent": UA_PROBE }, signal: AbortSignal.timeout(10000) });
+    const loc = res.headers.get("location") ?? "";
+    const body = res.status < 300 || res.status >= 400 ? (await res.text()).slice(0, 40000) : "";
+    const hay = `${loc} ${body}`.toLowerCase();
+    const rejected = /invalid[_ ]client|unknown client|client[_ ]?id|unauthorized_client|invalid_request|app not found|application not found|no application/.test(hay);
+    const toLogin = /login|signin|sign-in|account|auth/.test(loc.toLowerCase());
+    return {
+      date: today(),
+      intended: "Check how the authorization endpoint treats an app that was never registered",
+      attempted: `GET ${u.origin}${u.pathname} with a made-up client_id`,
+      result: `HTTP ${res.status}${loc ? ` redirect to ${host(loc) || loc.slice(0, 60)}` : ""}${rejected ? "; response names a client/request error" : ""}`,
+      stoppedAt: rejected ? "Provider rejected the unregistered client" : toLogin ? "Provider asked for sign-in before checking the client" : "No consent was granted; nothing further attempted",
+      proves: rejected
+        ? "The endpoint is live and validates client IDs, so a registered app is required before any user can connect"
+        : "The authorization endpoint is live at this address",
+      doesNotProve: "Which scopes a registered app may request, or any review outcome",
+      correction: "",
+    };
+  } catch {
+    return null;
+  }
+}
+const UA_PROBE = "OAuthLaunchpadResearch/1.0";
+
 /* ---------------------------------------------------------------- main */
 
 export async function runResearch(input: ResearchInput, emit: Emit): Promise<GuideT | null> {
@@ -460,16 +498,17 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
   const attempts: Attempt[] = [];
   if (catalogEntry?.authorizationUrl && !catalogEntry.authorizationUrl.includes("${")) {
     step("Probing the provider's OAuth server metadata");
-    const a = await oidcProbe(catalogEntry.authorizationUrl);
+    const [a, b] = await Promise.all([oidcProbe(catalogEntry.authorizationUrl), authorizeProbe(catalogEntry.authorizationUrl)]);
     if (a) attempts.push(a);
+    if (b) attempts.push(b);
   }
 
   /* 6. Extract structured guide */
   if (left() < 30000) warn("Research time budget nearly used; writing guide from what was found");
   const managed = await managedP;
   if (managed.status === "available") step(`Composio's managed OAuth directory lists ${managed.toolkit!.name}: a managed app is available`);
-  else if (managed.status === "not_listed") step(`Not in Composio's managed OAuth list (${managed.count} toolkits): plan to bring your own OAuth app`);
-  else warn("Couldn't read Composio's managed OAuth directory");
+  else if (managed.status === "not_listed") step(`Composio lists ${managed.toolkit!.name} under "Bring your own OAuth app": you register the app`);
+  else step(`Not among Composio's ${SNAPSHOT.stats.oauthToolkits} OAuth toolkits (snapshot ${SNAPSHOT.retrieved})`);
   step("Preparing the guide from the sources read");
   const ranked = [...official, ...pages.filter((p) => !isOfficial(p.url))].slice(0, 12);
   const srcMap = new Map<string, FetchedPage>();
@@ -488,8 +527,8 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
           managed.status === "available"
             ? `Composio provides a managed OAuth app for ${managed.toolkit!.name}. Users would see Composio's app on the consent screen and share its rate-limit quota; use your own app for your name on the consent screen, custom scopes or a separate quota.`
             : managed.status === "not_listed"
-              ? "Not listed as Composio-managed; the developer must bring their own OAuth app."
-              : "Unknown."
+              ? "Listed under 'Bring your own OAuth app': the developer must register their own OAuth app and create a custom auth config."
+              : "Not a Composio toolkit yet: the developer registers their own app and integrates it directly."
         }\n\nSOURCES:\n${blocks.join("\n\n")}`,
         Math.max(30000, Math.min(120000, left() - 5000)),
       );
@@ -526,7 +565,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
   const id = `${slug(plan.providerName || name)}-${Date.now().toString(36)}`;
   const managedClaim = () =>
     managed.status === "unknown"
-      ? { status: "unknown" as const, text: "Could not read Composio's managed OAuth directory during this run.", sourceIds: [] as string[] }
+      ? { status: "unknown" as const, text: `Not found among Composio's ${SNAPSHOT.stats.oauthToolkits} OAuth toolkits (snapshot ${SNAPSHOT.retrieved}). Composio may not offer this app yet, or lists it under another name.`, sourceIds: [] as string[] }
       : managed.status === "available"
         ? {
             status: "available" as const,
@@ -535,7 +574,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
           }
         : {
             status: "not_listed" as const,
-            text: `Not in Composio's list of ${managed.count} managed OAuth toolkits. Expect to register your own OAuth app (or the toolkit may not be on Composio yet).`,
+            text: `Composio lists ${managed.toolkit!.name} under "Bring your own OAuth app" (one of ${SNAPSHOT.stats.bringYourOwn}). Register your own app with the provider, then create a custom auth config with its client ID and secret.`,
             sourceIds: ["C1"],
           };
   const uncertainties: string[] = [];
@@ -690,7 +729,7 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
       id: "C1",
       title: "Managed OAuth apps | Composio",
       url: MANAGED_URL,
-      retrieved: today(),
+      retrieved: SNAPSHOT.retrieved,
       type: "secondary",
       note: managed.status === "available" ? `Listed under "Composio-managed OAuth available": ${managed.toolkit!.name}` : managed.intro.slice(0, 200),
     });

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Checklist from "@/components/Checklist";
+import OnComposio from "@/components/OnComposio";
+import { freshness } from "@/lib/freshness";
 import ResearchForm from "@/components/ResearchForm";
 import ShareBar from "@/components/ShareBar";
 import { Cites, DIFF, EvidenceTag, OwnerTag, ROUTE_LABEL, Section } from "@/components/ui";
@@ -28,6 +30,8 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
   const g = await getGuide((await params).id);
   if (!g) notFound();
   const d = DIFF[g.summary.difficulty];
+  const f = freshness(g);
+  const recheck = `/research?${new URLSearchParams({ provider: g.provider.name, actions: g.useCase.actions, audience: g.useCase.audience, ...(g.kind === "seed" ? { base: g.id } : {}) })}`;
 
   return (
     <article className="grid min-w-0 gap-5 [&>*]:min-w-0">
@@ -45,6 +49,16 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
           </div>
           <ShareBar id={g.id} />
         </div>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+          <span>
+            Last verified {f.verified} ·{" "}
+            <span className={f.due ? "font-semibold text-amber-700 dark:text-amber-300" : ""}>
+              {f.due ? `review overdue since ${f.nextReview}` : `next review ${f.nextReview}`}
+            </span>
+          </span>
+          <Link href={recheck} className="text-accent underline">Re-check now with the agent</Link>
+          <a href={`/g/${g.id}/json`} className="underline">JSON for agents</a>
+        </p>
         {g.status === "partial" && (
           <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
             Partial result: some key facts could not be confirmed. Gaps are listed under “Uncertain”.
@@ -164,6 +178,8 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
       <Section title="Checklist" hint="Steps grouped by stage. Each shows who owns it and how we know it.">
         <Checklist guide={g} />
       </Section>
+
+      <OnComposio guide={g} />
 
       {g.blockers.length > 0 && (
         <Section title="Blockers and recovery">
