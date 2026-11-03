@@ -9,6 +9,15 @@ import { SEEDS } from "./seeds";
  * is never used in production because it does not persist.
  */
 
+/** Hide junk list items in guides stored before the scrub step existed. */
+const clean = (g: Record<string, unknown>) => {
+  for (const k of ["uncertainties", "conflicts"]) {
+    const v = g[k];
+    if (Array.isArray(v)) g[k] = v.filter((i) => typeof i === "string" && i.trim() && !i.includes("[object Object]"));
+  }
+  return g;
+};
+
 const LOCAL_DIR = path.join(process.cwd(), ".data", "guides");
 const hasBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 
@@ -47,7 +56,7 @@ export async function getGuide(id: string): Promise<GuideT | null> {
       const meta = await head(`guides/${id}.json`);
       const res = await fetch(meta.url, { cache: "no-store" });
       if (!res.ok) return null;
-      return Guide.parse(await res.json());
+      return Guide.parse(clean(await res.json()));
     }
     if (mode === "local") {
       const raw = await fs.readFile(path.join(LOCAL_DIR, `${id}.json`), "utf8");

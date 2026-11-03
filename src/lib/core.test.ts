@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assertPublicUrl, htmlToText, isPrivateIp } from "./safeFetch";
-import { quoteSupported } from "./research";
+import { quoteSupported, scrub } from "./research";
 import { matchCatalog, type CatalogEntry } from "./catalog";
 import { Guide } from "./schema";
 import { findToolkit, parseManagedList, SNAPSHOT } from "./composio";
@@ -108,5 +108,11 @@ describe("freshness", () => {
     expect(a.due).toBe(false);
     expect(freshness({ id: "a", createdAt: "2026-01-01" }, now).due).toBe(true);
     expect([a.nextReview, b.nextReview].every((d) => d > "2026-11-25" && d < "2026-12-11")).toBe(true);
+  });
+});
+
+describe("scrub", () => {
+  it("drops junk list items anywhere", () => {
+    expect(scrub({ a: ["ok", "[object Object]", ""], b: { c: ["x", "[object Object]"] } })).toEqual({ a: ["ok"], b: { c: ["x"] } });
   });
 });

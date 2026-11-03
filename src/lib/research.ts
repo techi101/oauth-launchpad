@@ -285,14 +285,25 @@ async function authorizeProbe(authUrl: string): Promise<Attempt | null> {
     const res = await fetch(u, { redirect: "manual", headers: { "user-agent": UA_PROBE }, signal: AbortSignal.timeout(10000) });
     const loc = res.headers.get("location") ?? "";
     const body = res.status < 300 || res.status >= 400 ? (await res.text()).slice(0, 40000) : "";
-    const hay = `${loc} ${body}`.toLowerCase();
-    const rejected = /invalid[_ ]client|unknown client|client[_ ]?id|unauthorized_client|invalid_request|app not found|application not found|no application/.test(hay);
+    let locPath = "";
+    let locErr = "";
+    try {
+      const l = new URL(loc, u);
+      locPath = l.pathname.toLowerCase();
+      locErr = `${l.searchParams.get("error") ?? ""} ${l.searchParams.get("error_description") ?? ""}`.toLowerCase();
+    } catch {
+      /* no redirect */
+    }
+    const errText = `${locErr} ${body.toLowerCase()}`;
+    const rejected =
+      /error/.test(locPath) ||
+      /invalid[_ ]client|unknown client|unauthorized_client|client (id )?(is )?(invalid|not found)|invalid client|app(lication)? not found|no application/.test(errText);
     const toLogin = /login|signin|sign-in|account|auth/.test(loc.toLowerCase());
     return {
       date: today(),
       intended: "Check how the authorization endpoint treats an app that was never registered",
       attempted: `GET ${u.origin}${u.pathname} with a made-up client_id`,
-      result: `HTTP ${res.status}${loc ? ` redirect to ${host(loc) || loc.slice(0, 60)}` : ""}${rejected ? "; response names a client/request error" : ""}`,
+      result: `HTTP ${res.status}${loc ? ` redirect to ${host(loc) || loc.slice(0, 60)}` : ""}${rejected ? "; provider returned a client error" : ""}`,
       stoppedAt: rejected ? "Provider rejected the unregistered client" : toLogin ? "Provider asked for sign-in before checking the client" : "No consent was granted; nothing further attempted",
       proves: rejected
         ? "The endpoint is live and validates client IDs, so a registered app is required before any user can connect"
@@ -305,6 +316,17 @@ async function authorizeProbe(authUrl: string): Promise<Attempt | null> {
   }
 }
 const UA_PROBE = "OAuthLaunchpadResearch/1.0";
+
+/** Final guard: drop junk list items ("[object Object]", empty) anywhere in the guide before it is saved. */
+export function scrub<T>(x: T): T {
+  const bad = (v: unknown) => typeof v === "string" && (!v.trim() || v.includes("[object Object]"));
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.filter((i) => !bad(i)).map(walk);
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, val]) => [k, walk(val)]));
+    return v;
+  };
+  return walk(x) as T;
+}
 
 /* ---------------------------------------------------------------- main */
 
@@ -757,5 +779,5 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
 
   if (checked) step(`Evidence check: ${checked - unmatched} of ${checked} quoted claims matched their source; ${unmatched} marked unverified`);
   guide.researchLog = log;
-  return Guide.parse(guide);
+  return Guide.parse(scrub(guide));
 }
