@@ -18,7 +18,7 @@ There are three hand-researched starter guides (GitHub, Slack, Gmail). A live re
 ## Key product decisions
 
 1. **One guide answers one scenario.** "Connect Gmail" is too vague. Sending email needs `gmail.send` (sensitive scope, verification only). Reading or drafting needs `gmail.readonly` or `gmail.compose` (restricted scopes, plus a security assessment if data reaches your servers). So the form asks three questions: which app, what the agent should do, and who will connect. Those answers change the guide.
-2. **The route comes first.** Managed OAuth, such as Composio's directory, can remove registration entirely. The guide says when that works and when it doesn't. With a managed app, users see the platform's name on the consent screen and share its quota, so the starter guides recommend your own app for an external launch.
+2. **The route comes first.** Every guide checks Composio's managed OAuth directory live (127 toolkits) and cites it. Managed OAuth can remove registration entirely. The guide says when that works and when it doesn't. With a managed app, users see the platform's name on the consent screen and share its quota, so the starter guides recommend your own app for an external launch.
 3. **Work, wait and deadlines are three separate fields.** Developer effort is always labelled as an estimate. A review wait is shown only when a source states it; otherwise the guide says "Provider does not publish a turnaround we could verify." Deadlines triggered by usage are listed on their own. Example: Dropbox gives you two weeks after your 50th linked user, and that is not a promise about review time.
 4. **Evidence labels instead of confidence scores.** Every claim is tagged *Observed*, *Documented*, *Secondary source*, *Inferred* or *Unverified* and linked to its source. The agent has to give a word-for-word quote for every claim, and the server checks each quote against the page it cites. A claim whose quote doesn't match is downgraded to *Unverified*, so it can't pass as fact.
 5. **"No approval needed" is never a default.** If the agent finds no approval page, the guide says that and lists it as an uncertainty.
@@ -32,7 +32,7 @@ The steps are bounded, and each event in the UI is a real step (there are no fak
 2. **Plan:** the model proposes official doc URLs. Each one is only used after a real fetch confirms it exists.
 3. **Read:** fetch pages through `safeFetch`, which allows public http(s) only and re-checks every redirect hop. Private, loopback and metadata IP addresses are blocked. JavaScript-heavy docs fall back to the Jina Reader.
 4. **Follow links:** up to two rounds. The model picks links from the pages already read, aimed at the remaining gaps.
-5. **Probe:** check for an OIDC discovery document and load the registration page without logging in.
+5. **Probe and check managed status:** check for an OIDC discovery document, load the registration page without logging in, and look the toolkit up in Composio's managed OAuth directory.
 6. **Draft:** the model writes the guide using only the numbered sources it read, with a quote for every claim.
 7. **Verify:** check every quote against its source, remove links that aren't official, and validate the result against the zod schema.
 8. **Save:** store the guide in Vercel Blob at a permanent link, `/g/<id>`.
@@ -45,7 +45,7 @@ Models: Gemini (free tier) first, then DeepSeek as a backup, then Gemini Flash-L
 npm install
 cp .env.example .env.local   # add GEMINI_API_KEY and/or DEEPSEEK_API_KEY
 npm run dev                  # http://localhost:3000
-npm test                     # 10 unit tests: SSRF guard, quote check, catalog match, seed integrity
+npm test                     # 11 unit tests: SSRF guard, quote check, catalog match, Composio directory parsing, seed integrity
 npm run typecheck
 npm run research -- "Calendly" "Read upcoming meetings and cancel them" external   # same agent from the terminal
 ```

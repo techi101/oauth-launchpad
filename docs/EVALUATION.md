@@ -1,4 +1,4 @@
-# Evaluation record (3 Nov 2026)
+# Evaluation record (3 Nov 2026, second review pass included)
 
 ## Spec checks
 
@@ -33,9 +33,23 @@
 - **OAuth-support rule too narrow:** an adapted Gmail run on production (send only, testing) came out "Unresolved" because the rule only counted quotes in four fields. It now counts verified quotes anywhere in the guide. The rerun says register your own app, with `gmail.send` marked sensitive. The bad run was removed from the library.
 - **Model outages:** the free Gemini tier returned 503 on long requests for minutes at a time. Added retries across models, a pause between tries, and the DeepSeek backup.
 
+## Second review pass (same day)
+
+| Found | Fix | Result |
+|---|---|---|
+| The Calendly guide missed the cancel endpoint. Links were only followed when they matched OAuth words, so "cancel" links were never considered | Words from the requested actions now also count when choosing links and when picking which parts of a page the model sees | The rerun read Calendly's *Cancel Event* and *Create Scheduled Event Cancellation* pages and listed `scheduled_events:read` and `scheduled_events:write` |
+| The route decision was made by the model without checking whether Composio already provides the app | It now reads Composio's managed OAuth directory (127 toolkits), shows a "Managed app available" or "Not Composio-managed" line, and cites the directory as source C1 | Calendly, Dropbox, Gmail and Linear: available. Xero: not listed, so the guide says bring your own app and also found Xero's 5-connection Starter-tier limit |
+| Summary claims (main blocker, testing before review) often had no quote, so they showed as Unverified | The prompt now requires quotes for those fields whenever a source supports them | Calendly's main blocker and testing claims are now *Documented* |
+| "Your active work" showed an empty "Estimate:" (Xero) | An empty estimate now reads "Not estimated from the pages read." The prompt asks for a labelled estimate | All 5 regenerated guides have a real estimate, e.g. "about 1-2 hours…" |
+| "Agent can" listed coding steps ("exchange code for tokens") | The prompt limits it to setup and approval tasks, and "you must" to things only a person can do | E.g. "fill the registration form fields", "pick and justify the minimal scopes" |
+| The phone view looked cut off | Grid children get `min-w-0` and long text wraps. The first screenshot was misleading: headless Chrome's smallest window is 512px, so a 375px frame was used instead | Lays out correctly at 375px |
+| `/research` with no input showed an error | It now shows the research form | — |
+
+The production library was regenerated with the final code: Calendly 22/22, Linear 28/28, Dropbox 24/26, Xero 27/27, Gmail send-only 21/22 quotes matched.
+
 ## Still unverified or known gaps
 
-- **Calendly cancel scope:** the generated guide says it couldn't find a scope or endpoint for cancelling meetings in the pages it read. Calendly does document a cancellation endpoint. The agent disclosed the gap correctly but didn't reach the page.
+- **Calendly cancel scope:** fixed in the second pass (see above). The first run had disclosed the gap correctly instead of inventing an answer.
 - **Generated Gmail "send only":** it didn't reach the scopes page, so it couldn't say whether `gmail.send` is sensitive or restricted, and listed that as uncertain. The starter guide has it (sensitive).
 - **Review turnaround:** usually not published. Google gives "several weeks" in one place and "several months" in another, and the starter guide quotes both. Slack Marketplace states 10 business days plus up to 10 weeks. Others: "Provider does not publish a turnaround we could verify."
 - **CASA assessment fee:** no official figure, so none is quoted.
