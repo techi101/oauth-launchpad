@@ -133,6 +133,15 @@ function lenient<T extends z.ZodTypeAny>(item: T) {
     }));
 }
 
+/** A list item that should be text; models sometimes send {text|description|...} objects. */
+const textItem = z.preprocess(
+  (v) =>
+    v && typeof v === "object"
+      ? Object.values(v as Record<string, unknown>).filter((x) => typeof x === "string" && x.trim()).join(" — ")
+      : v,
+  z.coerce.string().refine((x) => x.trim().length > 0 && x !== "[object Object]"),
+);
+
 const ExtractOut = z.object({
   oauthSupported: z.enum(["yes", "no", "unclear"]).catch("unclear"),
   registrationUrl: z.string().default(""),
@@ -168,10 +177,10 @@ const ExtractOut = z.object({
         quote: z.string().default(""),
       })),
   ),
-  agentCan: lenient(z.coerce.string()),
-  humanMust: lenient(z.coerce.string()),
-  uncertainties: lenient(z.coerce.string()),
-  conflicts: lenient(z.coerce.string()),
+  agentCan: lenient(textItem),
+  humanMust: lenient(textItem),
+  uncertainties: lenient(textItem),
+  conflicts: lenient(textItem),
 });
 
 /* ---------------------------------------------------------------- prompts */

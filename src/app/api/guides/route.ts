@@ -1,3 +1,4 @@
+import { publicOrigin } from "@/lib/origin";
 import { findToolkit } from "@/lib/composio";
 import { freshness } from "@/lib/freshness";
 import { SEEDS } from "@/lib/seeds";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** Index of all guides for agents: GET /api/guides?q=slack */
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.toLowerCase() ?? "";
-  const origin = new URL(req.url).origin;
+  const origin = publicOrigin(req);
   const cards = [...SEEDS.map(toCard), ...(await listGenerated(100))]
     .filter((c) => !q || `${c.name} ${c.actions}`.toLowerCase().includes(q))
     .map((c) => ({

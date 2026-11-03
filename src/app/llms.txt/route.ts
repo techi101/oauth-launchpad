@@ -1,10 +1,11 @@
+import { publicOrigin } from "@/lib/origin";
 import { SEEDS } from "@/lib/seeds";
 import { listGenerated, toCard } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const origin = new URL(req.url).origin;
+  const origin = publicOrigin(req);
   const cards = [...SEEDS.map(toCard), ...(await listGenerated(50))];
   const body = `# OAuth Launchpad
 
