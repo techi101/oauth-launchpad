@@ -76,3 +76,40 @@ The production library was regenerated after this pass: Calendly, Gmail (send on
 - **CASA assessment fee:** no official figure, so none is quoted.
 - **Composio managed apps:** whether they are GitHub Apps, listed on Marketplace, or Google-verified was not confirmed.
 - **Registration forms:** never seen while logged in. No app was registered and no review was submitted.
+
+## Third pass (11 Nov 2026): live reliability, library review, setup kit
+
+### Live failures found and fixed
+
+| Found on production | Cause | Fix | Check |
+|---|---|---|---|
+| Zoom and HubSpot guides fell back to **Partial** | The model returned `nextAction` (and sometimes other text fields) as an object, and one field failed the whole guide | Text fields flatten objects/arrays; a required field that is empty drops only that item | New unit test; Zoom rerun on production in 59 s, complete, 6/6 source notes found on the live pages |
+| Shopify run ended in 11 s with "model unavailable" | The *plan* step's answer had an unexpected shape (string URLs, string booleans) and the parse error was reported as an outage | Tolerant plan parsing plus one automatic retry; an empty plan is treated as a failure, not a guide | New unit test; Shopify rerun complete, 26/27 quotes matched |
+
+### Library: 18 agent guides reviewed by hand
+
+Every library guide was generated live on production (`POST /api/research`, external-customer use case), then a reviewer checked its 5 most important claims (main blocker, review requirement, testing before review, key scopes, deadlines/costs) against the provider's official pages, opening the pages fresh rather than trusting the agent's notes. Corrections were applied with the official URL and a verbatim quote as a new source, and each guide shows a "Reviewed" banner with its notes. Result: **90 key claims checked, 74 right as the agent wrote them, 16 corrected or marked unconfirmed.** No guide was excluded.
+
+What the review caught (the agent's quote check alone could not, because the quotes were real but the conclusion was wrong or incomplete):
+
+| App | Correction |
+|---|---|
+| Spotify | Missed the real blocker: since 15 May 2025 extended quota is only for registered organisations with 250k+ monthly active users; development mode allows 5 allowlisted users. Spotify does publish a review time (up to six weeks). Difficulty raised to high |
+| Google Drive | `drive.readonly` and `drive.metadata.readonly` are **Restricted**, not Sensitive / Non-sensitive; restricted data on servers needs a security assessment. A Portuguese limits page was removed |
+| LinkedIn | Member posting is the self-serve *Share on LinkedIn* product (`w_member_social`); the vetted Community Management API is for company Pages. `liteprofile` replaced by OpenID Connect `openid profile`. Difficulty lowered to medium |
+| Asana | Review is needed for any workspace outside your organisation, not only the App Directory |
+| Jira | Atlassian review is optional for 3LO apps (enable sharing; unreviewed apps show a warning); 10–15 business days applies to Marketplace listings |
+| Microsoft Outlook | Blocker cited an Entra External ID line that does not apply; delegated `Mail.Send` / `Mail.Read` do not need admin consent by default |
+| Salesforce | Added `refresh_token` scope so the agent keeps working after the access token expires |
+| X | Added `offline.access` (without it, no refresh token and 2-hour tokens); developer access is self-serve at the console, not an application |
+| Strava | The athlete limit is published: 1 athlete by default, 10 on request, review beyond that |
+| Instagram, Shopify, QuickBooks, Xero, Zoom, Google Calendar, HubSpot | Smaller fixes: testing-before-review wording, Shopify's $19 App Store fee and 1 Jan 2027 delisting for non-expiring tokens, Xero tier prices, English source URLs, evidence labels raised or lowered to match what the page says |
+
+Still unconfirmed and shown as such: Discord's verification threshold (two official pages disagree: 100 servers vs 10,000 users), most providers' review turnaround, and Zoom's pre-review testing rules.
+
+### Setup kit ("Let the agent start it")
+
+- Slack: a manifest link (`api.slack.com/apps?new_app=1&manifest_json=…`, format from Slack's manifest docs) carrying the guide's exact bot scopes and the redirect URI. Unit test decodes the manifest and checks scopes and redirect.
+- GitHub: a GitHub App registration link with URL parameters (`github.com/settings/apps/new?name=…&callback_urls[]=…&contents=read&issues=write`, format from GitHub's docs). Unit test checks every parameter.
+- All other providers: a paste-ready registration packet. The agent never signs in or clicks Create.
+- Not yet done: a signed-in run that actually creates the Slack and GitHub apps from these links (needs the developer's own login).

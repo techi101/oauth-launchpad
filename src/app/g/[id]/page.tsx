@@ -63,7 +63,9 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
         {g.review && (
           <div className="rounded-md border border-emerald-600/40 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
             <p className="font-medium">
-              Reviewed {g.review.date}: {g.review.confirmed} of {g.review.checked} spot-checked claims confirmed against the cited pages.
+              Reviewed {g.review.date}: {g.review.checked} key claims checked by hand against official pages.{" "}
+              {g.review.confirmed} were right as the agent wrote them
+              {g.review.checked > g.review.confirmed ? `; ${g.review.checked - g.review.confirmed} were corrected or marked unconfirmed (see notes).` : "."}
             </p>
             {g.review.notes.length > 0 && (
               <ul className="mt-1 list-disc pl-5 text-xs">

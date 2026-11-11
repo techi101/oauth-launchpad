@@ -86,13 +86,29 @@ export function quoteSupported(quote: string, pageText: string): boolean {
 
 /* ---------------------------------------------------------- model schemas */
 
-const PlanOut = z.object({
-  providerName: z.string(),
-  ambiguous: z.boolean().default(false),
-  interpretations: z.array(z.coerce.string()).default([]),
-  officialDomains: z.array(z.coerce.string()).default([]),
-  candidateUrls: z.array(z.object({ url: z.string(), why: z.string().default("") })).default([]),
-  searchQueries: z.array(z.coerce.string()).default([]),
+const strList = z.preprocess(
+  (v) => (Array.isArray(v) ? v : v == null ? [] : [v]),
+  z.array(z.unknown()).transform((a) => a.map((x) => (typeof x === "string" ? x : x && typeof x === "object" ? String(Object.values(x)[0] ?? "") : String(x))).filter((x) => x && x !== "[object Object]")),
+);
+export const PlanOut = z.object({
+  providerName: z.preprocess((v) => (typeof v === "string" ? v : ""), z.string()).catch(""),
+  ambiguous: z.preprocess((v) => v === true || v === "true", z.boolean()).catch(false),
+  interpretations: strList.catch([]),
+  officialDomains: strList.catch([]),
+  candidateUrls: z
+    .preprocess(
+      (v) => (Array.isArray(v) ? v : v == null ? [] : [v]),
+      z.array(z.unknown()).transform((a) =>
+        a.flatMap((x) => {
+          if (typeof x === "string") return [{ url: x, why: "" }];
+          const o = x as Record<string, unknown> | null;
+          const url = o && (o.url ?? o.href ?? o.link);
+          return typeof url === "string" ? [{ url, why: typeof o?.why === "string" ? o.why : "" }] : [];
+        }),
+      ),
+    )
+    .catch([]),
+  searchQueries: strList.catch([]),
 });
 
 const FollowOut = z.object({
@@ -407,22 +423,33 @@ export async function runResearch(input: ResearchInput, emit: Emit): Promise<Gui
 
   /* 2. Plan */
   step("Planning which official documentation to read");
-  let plan: z.infer<typeof PlanOut>;
-  try {
-    const { json } = await llmJson(
-      PLAN_SYSTEM,
-      JSON.stringify({
-        provider: name,
-        website: website || null,
-        actions: input.actions,
-        audience: input.audience,
-        catalog: catalogEntry ?? null,
-      }),
-      45000,
-    );
-    plan = PlanOut.parse(json);
-  } catch (e) {
-    emit({ type: "error", text: `The research model is unavailable right now (${(e as Error).message}). Starter guides still work.` });
+  let plan: z.infer<typeof PlanOut> | null = null;
+  let planErr = "";
+  // One retry: a single malformed model answer should not end the run.
+  for (let attempt = 0; attempt < 2 && !plan; attempt++) {
+    try {
+      const { json } = await llmJson(
+        PLAN_SYSTEM,
+        JSON.stringify({
+          provider: name,
+          website: website || null,
+          actions: input.actions,
+          audience: input.audience,
+          catalog: catalogEntry ?? null,
+        }),
+        45000,
+      );
+      const p = PlanOut.parse(json);
+      if (!p.providerName) p.providerName = name;
+      if (!p.candidateUrls.length && !p.officialDomains.length) throw new Error("the plan had no documentation URLs or domains");
+      plan = p;
+    } catch (e) {
+      planErr = (e as Error).message;
+      if (attempt === 0) step("The model's plan was unusable; asking again");
+    }
+  }
+  if (!plan) {
+    emit({ type: "error", text: `The research model is unavailable right now (${planErr.slice(0, 200)}). Starter guides still work.` });
     return null;
   }
   if (plan.ambiguous && !website && !catalogEntry && plan.interpretations.length > 1) {

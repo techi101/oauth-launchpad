@@ -1,5 +1,7 @@
 # Demo script (about 5 minutes)
 
+**0. The library (30 s).** On the home page, the *Compare* table shows 21 apps hardest first: effort, route, your work, the provider's wait and the main blocker. Filter *High*: Google Drive, Google Calendar, Instagram, Spotify (250k MAU rule), Gmail. Open Spotify and point at the green *Reviewed* banner: what a person checked and corrected.
+
 **1. The problem (30 s).** On the home page, read the headline. "Before your agent can act in Gmail for your users, you register an OAuth app once. Users then click Allow. Some providers add a review that can take weeks. This tells you which case you're in."
 
 **2. A starter guide: Gmail (90 s).** Open **Gmail**.
@@ -10,6 +12,7 @@
 - *Checklist*: tick a step, then refresh. Progress stays in this browser only. Each step shows an owner (You, Agent, Org admin, Provider).
 - *Evidence*: click a `[g-scopes]` citation, then the setup attempt ("redirected to sign-in, stopped here; this proves X, not Y").
 - Click **Copy share link** and **Download Markdown**.
+- Open the Slack guide, *Let the agent start it*: change the app name, click **Open prefilled Slack registration**. Slack's own create-app page opens with the scopes and redirect URI already filled in.
 
 **3. Same app, different use case (30 s).** Scroll to *Different use case?* and enter "Send emails only", "Just me / testing". Or open the saved one from *Recently generated*. The guide now says `gmail.send`, a 100 test-user cap and 7-day refresh tokens, with no CASA requirement.
 

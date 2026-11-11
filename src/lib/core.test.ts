@@ -207,3 +207,20 @@ describe("setup kit", () => {
     expect(p).toContain("gmail");
   });
 });
+
+describe("plan tolerance", () => {
+  it("accepts string URLs, object list items and string booleans", async () => {
+    const { PlanOut } = await import("./research");
+    const p = PlanOut.parse({
+      ambiguous: "false",
+      officialDomains: ["shopify.dev", { domain: "shopify.com" }],
+      candidateUrls: ["https://shopify.dev/docs/apps/auth", { href: "https://shopify.dev/docs/api/usage/access-scopes" }, { why: "no url" }],
+      searchQueries: "shopify protected customer data",
+    });
+    expect(p.providerName).toBe("");
+    expect(p.ambiguous).toBe(false);
+    expect(p.officialDomains).toEqual(["shopify.dev", "shopify.com"]);
+    expect(p.candidateUrls.map((c) => c.url)).toEqual(["https://shopify.dev/docs/apps/auth", "https://shopify.dev/docs/api/usage/access-scopes"]);
+    expect(p.searchQueries).toEqual(["shopify protected customer data"]);
+  });
+});

@@ -13,7 +13,9 @@ A developer building an AI agent types an app, what the agent should do with it,
 - what an agent can do and where a person takes over
 - evidence for every claim
 
-There are three hand-researched starter guides (GitHub, Slack, Gmail). A live research agent writes new guides for any other app.
+The **library** has three hand-researched starter guides (GitHub, Slack, Gmail) plus agent-written guides that a person spot-checked against their sources (`data/library.json`; each shows a "Reviewed" banner with how many claims were checked). The home page compares them side by side, hardest first: effort, route, hands-on work, review wait and main blocker. A live research agent writes a new guide for any other app.
+
+Every guide also has **"Let the agent start it"**: the registration work an agent can do before a person signs in. Where the provider documents a prefilled registration link, it builds one from the guide's exact permissions: a [Slack app manifest link](https://docs.slack.dev/app-manifests/configuring-apps-with-app-manifests) or a [GitHub App URL-parameter link](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-using-url-parameters). The developer reviews the prefilled page and clicks Create. For every other provider it prepares a paste-ready registration packet (name, redirect URI defaulting to Composio's v3 callback, scopes with their review impact, prerequisites).
 
 ## Key product decisions
 
@@ -22,7 +24,9 @@ There are three hand-researched starter guides (GitHub, Slack, Gmail). A live re
 3. **Work, wait and deadlines are three separate fields.** Developer effort is always labelled as an estimate. A review wait is shown only when a source states it; otherwise the guide says "Provider does not publish a turnaround we could verify." Deadlines triggered by usage are listed on their own. Example: Dropbox gives you two weeks after your 50th linked user, and that is not a promise about review time.
 4. **Evidence labels instead of confidence scores.** Every claim is tagged *Observed*, *Documented*, *Secondary source*, *Inferred* or *Unverified* and linked to its source. The agent has to give a word-for-word quote for every claim, and the server checks each quote against the page it cites. A claim whose quote doesn't match is downgraded to *Unverified*, so it can't pass as fact.
 5. **"No approval needed" is never a default.** If the agent finds no approval page, the guide says that and lists it as an uncertainty.
-6. **Small, real setup attempts.** The agent probes the provider's OAuth discovery document and the registration page without logging in. It records exactly where it stopped, what that proves and what it doesn't.
+6. **The agent starts the setup, the person finishes it.** Registration needs the developer's own login and legal acceptance, so the agent never signs in or submits. It does everything up to that point: a prefilled create-app link where the provider documents one (Slack, GitHub), otherwise every field value ready to paste.
+7. **A reviewed library beats a big unreviewed one.** Generated guides only enter the library after a person checks a sample of their claims against the cited pages; un-reviewed runs are shown separately as "Recent live runs".
+8. **Small, real setup attempts.** The agent probes the provider's OAuth discovery document and the registration page without logging in. It records exactly where it stopped, what that proves and what it doesn't.
 
 ## Built for Composio specifically
 
@@ -61,7 +65,7 @@ Models: Gemini (free tier) first, then DeepSeek as a backup, then Gemini Flash-L
 npm install
 cp .env.example .env.local   # add GEMINI_API_KEY and/or DEEPSEEK_API_KEY
 npm run dev                  # http://localhost:3000
-npm test                     # 15 unit tests: SSRF guard, quote check, catalog match, Composio snapshot, freshness, scrub, seed integrity
+npm test                     # unit tests: SSRF guard, quote check, catalog match, Composio snapshot, freshness, scrub, seed integrity, model-output tolerance, setup-kit links
 python scripts/build-composio-snapshot.py toolkits.json auth.md   # refresh the Composio snapshot (needs gh)
 npm run typecheck
 npm run research -- "Calendly" "Read upcoming meetings and cancel them" external   # same agent from the terminal
