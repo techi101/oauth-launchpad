@@ -77,9 +77,13 @@ function Runner() {
 
   if (!provider)
     return (
-      <div className="grid gap-4">
-        <h1 className="text-2xl font-semibold">Research an app</h1>
-        <div className="rounded-lg border border-line bg-panel p-5">
+      <div className="mx-auto grid max-w-2xl gap-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Live research</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Research an app</h1>
+          <p className="mt-1 text-slate-600">The agent reads the provider&apos;s official docs and writes a guide for your exact use case in about a minute.</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-subtle p-6">
           <ResearchForm />
         </div>
       </div>
@@ -87,54 +91,73 @@ function Runner() {
 
   const sources = events.filter((e): e is Extract<Ev, { type: "source" }> => e.type === "source");
   const amb = events.find((e): e is Extract<Ev, { type: "ambiguous" }> => e.type === "ambiguous");
+  const steps = events.filter((e) => e.type === "step" || e.type === "warn" || e.type === "error" || e.type === "saved");
+  const pct = state === "done" ? 100 : Math.min(95, Math.round((elapsed / 75) * 100));
+  const host = (u: string) => {
+    try {
+      return new URL(u).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  };
 
   return (
     <div className="grid gap-6">
       <div>
-        <p className="text-sm text-muted">
-          <Link href="/" className="underline">Guides</Link> / Research
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold">Researching {provider}</h1>
-        <p className="text-sm text-muted">
-          For: {actions} · {audience === "external" ? "External customers" : audience === "internal" ? "Own organisation" : "Testing"}
-        </p>
+        <nav className="flex items-center gap-1.5 text-sm text-muted">
+          <Link href="/#library" className="hover:text-fg">Library</Link> <span>/</span> <span className="text-fg">Research</span>
+        </nav>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Researching {provider}</h1>
+            <p className="mt-1 text-slate-600">
+              “{actions}” · {audience === "external" ? "External customers" : audience === "internal" ? "My organisation" : "Just me / testing"}
+            </p>
+          </div>
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+              state === "running" ? "bg-indigo-50 text-indigo-700" : state === "done" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+            }`}
+          >
+            {state === "running" && <span className="h-2 w-2 animate-ping rounded-full bg-indigo-500" />}
+            {state === "running" ? `Working · ${elapsed}s` : state === "done" ? "Done, opening the guide…" : `Stopped after ${elapsed}s`}
+          </span>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${state === "stopped" ? "bg-rose-400" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
-        <section className="rounded-lg border border-line bg-panel p-5" aria-live="polite">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Agent activity</h2>
-            <span className="text-xs text-muted">
-              {state === "running" ? `Running · ${elapsed}s` : state === "done" ? "Done, opening guide…" : `Stopped · ${elapsed}s`}
-            </span>
-          </div>
-          <ol className="mt-3 grid gap-2 text-sm">
-            {events
-              .filter((e) => e.type === "step" || e.type === "warn" || e.type === "error" || e.type === "saved")
-              .map((e, i) => (
-                <li key={i} className="flex gap-2">
-                  <span aria-hidden className={e.type === "warn" ? "text-amber-600" : e.type === "error" ? "text-rose-600" : "text-accent"}>
-                    {e.type === "warn" ? "!" : e.type === "error" ? "×" : "•"}
-                  </span>
-                  <span className={e.type === "error" ? "text-rose-700 dark:text-rose-300" : ""}>
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm" aria-live="polite">
+          <h2 className="font-semibold">What the agent is doing</h2>
+          <ol className="relative mt-4 ml-2.5 grid gap-3 border-l border-line pl-6">
+            {steps.map((e, i) => {
+              const last = i === steps.length - 1 && state === "running";
+              const tone = e.type === "warn" ? "bg-amber-400" : e.type === "error" ? "bg-rose-500" : e.type === "saved" ? "bg-emerald-500" : last ? "bg-indigo-500" : "bg-indigo-200";
+              return (
+                <li key={i} className="relative text-sm">
+                  <span className={`absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-white ${tone} ${last ? "animate-pulse" : ""}`} />
+                  <span className={e.type === "error" ? "text-rose-700" : e.type === "warn" ? "text-amber-800" : last ? "font-medium" : "text-slate-600"}>
                     {e.type === "saved" ? "Guide saved with a permanent link" : "text" in e ? e.text : ""}
                   </span>
                 </li>
-              ))}
-            {state === "running" && <li className="animate-pulse text-muted">Working…</li>}
+              );
+            })}
+            {!steps.length && <li className="text-sm text-muted">Starting…</li>}
           </ol>
           {amb && (
-            <div className="mt-4 rounded-md border border-line p-3 text-sm">
+            <div className="mt-5 rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 text-sm">
               <p className="font-medium">{amb.text}</p>
-              <ul className="mt-2 grid gap-1">
+              <ul className="mt-2 grid gap-1.5">
                 {amb.candidates.map((c) => (
                   <li key={c.key || c.name}>
                     {c.key ? (
-                      <a
-                        className="text-accent underline"
-                        href={`/research?${new URLSearchParams({ provider: c.name, actions, audience, key: c.key })}`}
-                      >
-                        {c.name}
+                      <a className="font-medium text-accent hover:underline" href={`/research?${new URLSearchParams({ provider: c.name, actions, audience, key: c.key })}`}>
+                        {c.name} →
                       </a>
                     ) : (
                       c.name
@@ -146,23 +169,29 @@ function Runner() {
             </div>
           )}
           {state === "stopped" && (
-            <p className="mt-4 text-sm">
-              <Link href="/#research" className="text-accent underline">Try again</Link> (adding the website often helps)
+            <p className="mt-5 text-sm">
+              <Link href="/#research" className="font-medium text-accent hover:underline">Try again</Link>
+              <span className="text-muted"> (adding the website often helps)</span>
             </p>
           )}
         </section>
 
-        <section className="rounded-lg border border-line bg-panel p-5">
-          <h2 className="font-semibold">Pages read ({sources.length})</h2>
-          <ul className="mt-3 grid gap-2 text-sm">
+        <section className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-semibold">Pages read</h2>
+            <span className="text-sm font-semibold text-accent">{sources.length}</span>
+          </div>
+          <ul className="mt-4 grid gap-2 text-sm">
             {sources.map((s, i) => (
-              <li key={i} className="break-words">
-                <span className={`mr-1 rounded px-1 text-[11px] ${s.official ? "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200" : "bg-zinc-200 dark:bg-zinc-800"}`}>
-                  {s.official ? "official" : "other"}
+              <li key={i} className="flex items-start gap-2.5 rounded-lg p-1.5 hover:bg-subtle">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://www.google.com/s2/favicons?domain=${host(s.url)}&sz=32`} alt="" width={16} height={16} className="mt-0.5 shrink-0" />
+                <span className="min-w-0">
+                  <a href={s.url} target="_blank" rel="noreferrer" className="line-clamp-2 hover:text-accent">{s.title}</a>
+                  <span className="text-xs text-muted">
+                    {host(s.url)} · {s.official ? <span className="text-emerald-700">official</span> : "other source"}
+                  </span>
                 </span>
-                <a href={s.url} target="_blank" rel="noreferrer" className="hover:underline">
-                  {s.title}
-                </a>
               </li>
             ))}
             {!sources.length && <li className="text-muted">None yet.</li>}

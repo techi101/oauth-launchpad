@@ -30,7 +30,7 @@ export default function SetupKit({ guide }: { guide: Guide }) {
     }
   };
 
-  const field = "w-full rounded-md border border-line bg-bg px-2 py-1.5 text-sm outline-none focus:border-accent";
+  const field = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100";
   return (
     <div className="grid gap-4 text-sm">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -93,7 +93,7 @@ export default function SetupKit({ guide }: { guide: Guide }) {
             {copied === "packet" ? "Copied" : "Copy packet"}
           </button>
         </div>
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-line bg-bg p-3 font-mono text-xs">{text}</pre>
+        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-slate-900 p-4 font-mono text-xs text-slate-100">{text}</pre>
       </div>
     </div>
   );

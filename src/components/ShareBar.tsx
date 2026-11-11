@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Icon from "./Icon";
 
-export default function ShareBar({ id }: { id: string }) {
+const btn = "inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:border-slate-300 hover:text-fg";
+
+export default function ShareBar({ id, recheck }: { id: string; recheck?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     const url = `${location.origin}/g/${id}`;
@@ -15,13 +18,18 @@ export default function ShareBar({ id }: { id: string }) {
     }
   };
   return (
-    <div className="flex flex-wrap gap-2 text-sm">
-      <button onClick={copy} className="rounded-md border border-line bg-panel px-3 py-1.5 hover:border-accent">
-        {copied ? "Link copied" : "Copy share link"}
+    <div className="flex flex-wrap gap-2">
+      <button onClick={copy} className={btn}>
+        <Icon name={copied ? "check" : "link"} /> {copied ? "Link copied" : "Share"}
       </button>
-      <a href={`/g/${id}/md`} className="rounded-md border border-line bg-panel px-3 py-1.5 hover:border-accent">
-        Download Markdown
+      <a href={`/g/${id}/md`} className={btn}>
+        <Icon name="download" /> Markdown
       </a>
+      {recheck && (
+        <a href={recheck} className={btn}>
+          <Icon name="refresh" /> Re-check
+        </a>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Guide, type Guide as GuideT } from "./schema";
 import { CURATED } from "./seeds";
+import { domainOf, firstSentence, logoDomain, shortWait, shortWork } from "./display";
 
 /**
  * Generated guides are stored durably in Vercel Blob (BLOB_READ_WRITE_TOKEN).
@@ -79,6 +80,10 @@ export type GuideCard = {
   activeWork: string;
   mainBlocker: string;
   reviewed: boolean;
+  domain: string;
+  workShort: string;
+  waitShort: string;
+  blockerShort: string;
   kind: GuideT["kind"];
   status: GuideT["status"];
   createdAt: string;
@@ -95,6 +100,10 @@ export const toCard = (g: GuideT): GuideCard => ({
   activeWork: g.timing.activeWork.text,
   mainBlocker: g.summary.mainBlocker.text,
   reviewed: g.kind === "seed" || Boolean(g.review),
+  domain: logoDomain(g.provider.name, domainOf(g)),
+  workShort: shortWork(g.timing.activeWork.text),
+  waitShort: shortWait(g.timing.reviewWait.text),
+  blockerShort: firstSentence(g.summary.mainBlocker.text, 130),
   kind: g.kind,
   status: g.status,
   createdAt: g.createdAt,

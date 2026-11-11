@@ -224,3 +224,12 @@ describe("plan tolerance", () => {
     expect(p.searchQueries).toEqual(["shopify protected customer data"]);
   });
 });
+
+describe("english sources", () => {
+  it("drops non-English language parameters", async () => {
+    const { preferEnglish } = await import("./safeFetch");
+    expect(preferEnglish("https://developers.google.com/identity/protocols/oauth2?hl=es-419")).toBe("https://developers.google.com/identity/protocols/oauth2");
+    expect(preferEnglish("https://developers.google.com/x?hl=en&a=1")).toBe("https://developers.google.com/x?hl=en&a=1");
+    expect(preferEnglish("https://example.com/docs?lang=pt-br&page=2")).toBe("https://example.com/docs?page=2");
+  });
+});

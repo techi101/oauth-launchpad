@@ -48,7 +48,7 @@ export default function OnComposio({ guide }: { guide: Guide }) {
       <div className="grid gap-4 text-sm">
         <p>
           <span
-            className={`mr-2 rounded px-1.5 py-0.5 text-xs font-semibold ${t.managed ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"}`}
+            className={`mr-2 rounded px-1.5 py-0.5 text-xs font-semibold ${t.managed ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}`}
           >
             {t.managed ? "Managed OAuth available" : "Bring your own OAuth app"}
           </span>
@@ -73,11 +73,11 @@ export default function OnComposio({ guide }: { guide: Guide }) {
           </li>
           <li>
             <b>Redirect URI: register exactly the one your auth config shows.</b> Composio&apos;s docs tell you to register{" "}
-            <code className="break-all rounded bg-bg px-1 font-mono text-xs">{V3_CALLBACK}</code> (<A href={WHITE_LABEL_URL}>white-labelling docs</A>).{" "}
+            <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs">{V3_CALLBACK}</code> (<A href={WHITE_LABEL_URL}>white-labelling docs</A>).{" "}
             {legacyDefault ? (
               <>
                 But {t.name}&apos;s auth-config form defaults its <i>Redirect URI</i> field to the legacy{" "}
-                <code className="break-all rounded bg-bg px-1 font-mono text-xs">{V1_CALLBACK}</code>. Pick one, put it in both the provider
+                <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs">{V1_CALLBACK}</code>. Pick one, put it in both the provider
                 portal and the auth config&apos;s Redirect URI field. A mismatch fails with <code className="font-mono text-xs">invalid redirect_uri</code> (
                 <A href="https://github.com/ComposioHQ/composio/issues/2999">#2999</A>).
               </>
@@ -87,8 +87,8 @@ export default function OnComposio({ guide }: { guide: Guide }) {
           </li>
           <li>
             <b>Create the auth config:</b> Dashboard → Auth Configs → Create Auth Config → {t.name} → OAuth2 → your own credentials. Required:{" "}
-            {t.requiredFields.map((f) => <code key={f} className="mr-1 rounded bg-bg px-1 font-mono text-xs">{f}</code>)}
-            {t.optionalFields.length > 0 && <>Optional: {t.optionalFields.map((f) => <code key={f} className="mr-1 rounded bg-bg px-1 font-mono text-xs">{f}</code>)}</>}
+            {t.requiredFields.map((f) => <code key={f} className="mr-1 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs">{f}</code>)}
+            {t.optionalFields.length > 0 && <>Optional: {t.optionalFields.map((f) => <code key={f} className="mr-1 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs">{f}</code>)}</>}
           </li>
           {scopes.length > 0 && (
             <li>
@@ -100,7 +100,7 @@ export default function OnComposio({ guide }: { guide: Guide }) {
           )}
           <li>
             <b>Use it in a session.</b> Toolkits you leave out stay on managed auth.
-            <pre className="mt-1 overflow-x-auto rounded bg-bg p-2 font-mono text-xs">{py}</pre>
+            <pre className="mt-1 overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-slate-100 text-xs">{py}</pre>
           </li>
           <li>
             <b>Verify with one real call after connecting.</b> An <i>ACTIVE</i> connection is not proof the token works (

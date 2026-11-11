@@ -50,8 +50,8 @@ export default async function Coverage() {
   return (
     <div className="grid min-w-0 gap-6 [&>*]:min-w-0">
       <div>
-        <p className="text-sm text-muted"><Link href="/" className="underline">Guides</Link> / Coverage</p>
-        <h1 className="mt-1 text-2xl font-semibold">Which 100 apps, and why</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Coverage</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Which 100 apps, and why</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted">
           A guide matters most where a developer has no shortcut: the app has no Composio-managed OAuth, so registration (and any provider
           review) is on them. This page ranks those apps from Composio&apos;s public toolkit data (snapshot {SNAPSHOT.retrieved}) so the library
@@ -61,7 +61,7 @@ export default async function Coverage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 [&>*]:min-w-0">
         {tiles.map(([label, value, sub]) => (
-          <div key={label} className="rounded-lg border border-line bg-panel p-4">
+          <div key={label} className="rounded-2xl border border-line bg-white shadow-sm p-4">
             <p className="text-2xl font-semibold">{value}</p>
             <p className="text-sm font-medium">{label}</p>
             <p className="text-xs text-muted">{sub}</p>
@@ -69,7 +69,7 @@ export default async function Coverage() {
         ))}
       </div>
 
-      <section className="rounded-lg border border-line bg-panel p-5 text-sm">
+      <section className="rounded-2xl border border-line bg-white shadow-sm p-5 text-sm">
         <h2 className="font-semibold">Ranking method</h2>
         <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted">
           <li>Only <b>bring-your-own-app</b> toolkits are ranked ({s.bringYourOwn}). Managed toolkits still get guides on request, but a developer can start without one.</li>
@@ -81,7 +81,7 @@ export default async function Coverage() {
         </ul>
       </section>
 
-      <section className="rounded-lg border border-line bg-panel p-5">
+      <section className="rounded-2xl border border-line bg-white shadow-sm p-5">
         <h2 className="font-semibold">Next 100 guides</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-sm">

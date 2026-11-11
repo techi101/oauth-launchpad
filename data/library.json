@@ -1961,11 +1961,11 @@
    },
    {
     "id": "S4",
-    "title": "Guide de démarrage rapide pour JavaScript  |  Google Drive  |  Google for Developers",
-    "url": "https://developers.google.com/workspace/drive/api/quickstart/js?hl=fr",
+    "title": "JavaScript quickstart | Google Drive | Google for Developers",
+    "url": "https://developers.google.com/workspace/drive/api/quickstart/js",
     "retrieved": "2026-11-11",
     "type": "official",
-    "note": "Dans la console Google Cloud, activez l'API Google Drive"
+    "note": "In the Google Cloud console, enable the Google Drive API."
    },
    {
     "id": "S9",
@@ -1993,19 +1993,19 @@
    },
    {
     "id": "S7",
-    "title": "Limites de uso  |  Google Drive  |  Google for Developers",
-    "url": "https://developers.google.com/workspace/drive/api/guides/limits?hl=pt-br",
+    "title": "Usage limits | Google Drive | Google for Developers",
+    "url": "https://developers.google.com/workspace/drive/api/guides/limits",
     "retrieved": "2026-11-11",
     "type": "official",
-    "note": "Se você exceder uma cota, vai receber uma resposta de código de status HTTP 403: User rate limit exceeded"
+    "note": "If you exceed a quota, you'll receive a 403: User rate limit exceeded HTTP status code response."
    },
    {
     "id": "S1",
-    "title": "Cómo usar OAuth 2.0 para acceder a las API de Google  |  Authorization  |  Google for Developers",
-    "url": "https://developers.google.com/identity/protocols/oauth2?hl=es-419",
+    "title": "Using OAuth 2.0 to Access Google APIs | Google for Developers",
+    "url": "https://developers.google.com/identity/protocols/oauth2",
     "retrieved": "2026-11-11",
     "type": "official",
-    "note": "Un proyecto de Google Cloud Platform con una pantalla de consentimiento de OAuth configurada"
+    "note": "A Google Cloud Platform project with an OAuth consent screen configured for an external user type"
    },
    {
     "id": "C1",
@@ -2029,8 +2029,7 @@
    }
   ],
   "uncertainties": [
-   "The sources read do not state a verification turnaround time.",
-   "Whether a security assessment is required depends on whether you store restricted-scope data; drive.readonly is sensitive, not restricted, per the scope tables."
+   "The sources read do not state a verification turnaround time."
   ],
   "conflicts": [],
   "researchLog": [
@@ -2090,7 +2089,8 @@
     "Confirmed: storing or transmitting restricted-scope data on servers requires a security assessment.",
     "Confirmed: sensitive or restricted scopes must be verified before they can be used in production.",
     "Removed: a Portuguese usage-limits page cited as a deadline and a cost; it was not relevant to approval.",
-    "Could not confirm in the pages read: a published review turnaround."
+    "Could not confirm in the pages read: a published review turnaround.",
+    "Replaced three non-English source pages (Spanish, French, Portuguese) with the English versions and their English wording."
    ]
   }
  },

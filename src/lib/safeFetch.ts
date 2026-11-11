@@ -139,7 +139,7 @@ async function directFetch(raw: string, timeoutMs: number): Promise<{ finalUrl: 
     const url = await assertPublicUrl(current);
     const res = await fetch(url, {
       redirect: "manual",
-      headers: { "user-agent": UA, accept: "text/html,text/plain,application/xhtml+xml,*/*;q=0.5" },
+      headers: { "user-agent": UA, accept: "text/html,text/plain,application/xhtml+xml,*/*;q=0.5", "accept-language": "en-US,en;q=0.9" },
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
@@ -189,7 +189,25 @@ export function looksLikeErrorPage(page: Pick<FetchedPage, "title" | "text">): b
   return text.length < 4000 && ERROR_LEAD.test(text.slice(0, 600));
 }
 
-export async function fetchPage(raw: string, timeoutMs = 12000): Promise<FetchedPage> {
+/**
+ * Docs sites link to every translation of a page (e.g. Google's ?hl=fr). Guides are in English, so a
+ * non-English language parameter is dropped and English is requested.
+ */
+export function preferEnglish(raw: string): string {
+  try {
+    const u = new URL(raw);
+    for (const k of ["hl", "lang", "locale", "language"]) {
+      const v = u.searchParams.get(k);
+      if (v && !/^en(-|$)/i.test(v)) u.searchParams.delete(k);
+    }
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
+export async function fetchPage(rawUrl: string, timeoutMs = 12000): Promise<FetchedPage> {
+  const raw = preferEnglish(rawUrl);
   let page: FetchedPage | null = null;
   let err: unknown = null;
   try {

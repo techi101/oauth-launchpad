@@ -10,7 +10,7 @@ export default function ResearchForm({
   initialActions = "",
   initialAudience = "external",
   baseGuideId,
-  compact = false,
+  compact: _compact = false, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: {
   initialProvider?: string;
   initialActions?: string;
@@ -34,15 +34,15 @@ export default function ResearchForm({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3" aria-label="Research an app">
-      <div className={compact ? "grid gap-3" : "grid gap-3 md:grid-cols-[1fr_1.3fr]"}>
+    <form onSubmit={submit} className="grid gap-4" aria-label="Research an app">
+      <div className="grid gap-4">
         <label className="grid gap-1 text-sm">
           <span className="font-medium">1. Which app?</span>
           <input
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
             placeholder="e.g. Calendly or calendly.com"
-            className="rounded-md border border-line bg-bg px-3 py-2 outline-none focus:border-accent"
+            className="rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
             maxLength={80}
           />
         </label>
@@ -52,7 +52,7 @@ export default function ResearchForm({
             value={actions}
             onChange={(e) => setActions(e.target.value)}
             placeholder="e.g. Read upcoming meetings and cancel them"
-            className="rounded-md border border-line bg-bg px-3 py-2 outline-none focus:border-accent"
+            className="rounded-xl border border-line bg-white px-3.5 py-2.5 shadow-sm outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
             maxLength={300}
             list="action-examples"
           />
@@ -64,7 +64,7 @@ export default function ResearchForm({
         </label>
       </div>
       <fieldset className="text-sm">
-        <legend className="mb-1 font-medium">3. Who will connect their accounts?</legend>
+        <legend className="mb-1.5 font-medium">3. Who will connect their accounts?</legend>
         <div className="flex flex-wrap gap-2">
           {[
             ["personal", "Just me / testing"],
@@ -73,7 +73,7 @@ export default function ResearchForm({
           ].map(([v, l]) => (
             <label
               key={v}
-              className={`cursor-pointer rounded-md border px-3 py-1.5 ${audience === v ? "border-accent bg-accent-soft" : "border-line"}`}
+              className={`cursor-pointer rounded-xl border px-3 py-2 font-medium transition ${audience === v ? "border-indigo-300 bg-accent-soft text-accent ring-4 ring-indigo-100" : "border-line bg-white text-slate-600 hover:border-slate-300"}`}
             >
               <input type="radio" name="audience" value={v} checked={audience === v} onChange={() => setAudience(v)} className="sr-only" />
               {l}
@@ -82,11 +82,11 @@ export default function ResearchForm({
         </div>
       </fieldset>
       {err && <p className="text-sm text-rose-600" role="alert">{err}</p>}
-      <div>
-        <button type="submit" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-          {baseGuideId ? "Re-research for this use case" : "Research this app"}
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-accent-strong">
+          {baseGuideId ? "Re-research for this use case" : "Research this app"} <span aria-hidden>→</span>
         </button>
-        <span className="ml-3 text-xs text-muted">Takes 1–3 minutes. The agent reads official docs live.</span>
+        <span className="text-xs text-muted">About 1 minute. Reads official docs live.</span>
       </div>
     </form>
   );
