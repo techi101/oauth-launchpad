@@ -108,7 +108,11 @@ export async function listGenerated(limit = 24): Promise<GuideCard[]> {
     if (mode === "blob") {
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: "guides/", limit: 100 });
-      const recent = blobs.sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt)).slice(0, limit);
+      const curatedIds = new Set(CURATED.map((g) => `guides/${g.id}.json`));
+      const recent = blobs
+        .filter((b) => !curatedIds.has(b.pathname)) // library guides are shown from the repo, not as recent runs
+        .sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt))
+        .slice(0, limit);
       const got = await Promise.all(
         recent.map(async (b) => {
           try {
