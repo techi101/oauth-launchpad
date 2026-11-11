@@ -149,3 +149,25 @@ describe("scrub", () => {
     expect(scrub({ a: ["ok", "[object Object]", ""], b: { c: ["x", "[object Object]"] } })).toEqual({ a: ["ok"], b: { c: ["x"] } });
   });
 });
+
+describe("model output tolerance", () => {
+  it("keeps the guide when the model returns objects where text is expected", async () => {
+    const { ExtractOut } = await import("./research");
+    const r = ExtractOut.safeParse({
+      difficulty: "high",
+      nextAction: { action: "Create a General app", where: "marketplace.zoom.us" },
+      routeReason: ["Managed app exists", "but external apps need review"],
+      permissions: [{ scope: "meeting:write", enables: { text: "create meetings" } }, { scope: {} }],
+      blockers: [{ symptom: "Review rejected", nextAction: { step: "Fix and resubmit" } }],
+      steps: [{ title: "Register", detail: 42, where: null }],
+    });
+    expect(r.success).toBe(true);
+    if (!r.success) return;
+    expect(r.data.nextAction).toContain("Create a General app");
+    expect(r.data.routeReason).toContain("external apps need review");
+    expect(r.data.permissions).toHaveLength(1); // empty scope dropped, not the whole guide
+    expect(r.data.permissions[0].enables).toBe("create meetings");
+    expect(r.data.blockers[0].nextAction).toBe("Fix and resubmit");
+    expect(r.data.steps[0].detail).toBe("42");
+  });
+});

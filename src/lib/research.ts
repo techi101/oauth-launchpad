@@ -102,27 +102,38 @@ const FollowOut = z.object({
 
 // Models sometimes return a bare string where a claim object is expected: wrap it (it then has no quote, so it can't count as documented).
 const asObj = (key: string) => (v: unknown) => (typeof v === "string" ? { [key]: v } : v);
+/** Text field that tolerates objects/arrays/numbers from the model (flattened to text) instead of failing the whole guide. */
+function flat(v: unknown): unknown {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) return v.map(flat).filter((x) => typeof x === "string" && x.trim()).join("; ");
+  if (typeof v === "object") return Object.values(v as Record<string, unknown>).map(flat).filter((x) => typeof x === "string" && x.trim()).join(" — ");
+  return "";
+}
+const str = () => z.preprocess(flat, z.string()).catch("");
+const reqStr = () => z.preprocess(flat, z.string().refine((x) => x.trim().length > 0));
 const ids = z.preprocess((v) => (typeof v === "string" ? [v] : v), z.array(z.coerce.string()).default([]));
 const MClaim = z.preprocess(
   asObj("text"),
   z.object({
-    text: z.string().default(""),
+    text: str(),
     sourceIds: ids,
-    quote: z.string().default(""),
+    quote: str(),
     inferred: z.boolean().default(false),
   }),
 );
 const MStep = z.preprocess(asObj("title"), z.object({
   id: z.coerce.string().default(""),
-  phase: z.string().default("Register & configure"),
-  title: z.string(),
-  detail: z.string().default(""),
-  where: z.string().default(""),
-  outcome: z.string().default(""),
+  phase: z.preprocess(flat, z.string()).catch("Register & configure"),
+  title: reqStr(),
+  detail: str(),
+  where: str(),
+  outcome: str(),
   dependsOn: z.array(z.coerce.string()).default([]),
   owner: z.enum(["agent", "developer", "admin", "provider"]).catch("developer"),
   sourceIds: ids,
-  quote: z.string().default(""),
+  quote: str(),
 }));
 /** Keep the valid items of a model-returned list instead of rejecting the whole guide for one bad item. */
 function lenient<T extends z.ZodTypeAny>(item: T) {
@@ -143,16 +154,16 @@ const textItem = z.preprocess(
   z.coerce.string().refine((x) => x.trim().length > 0 && x !== "[object Object]"),
 );
 
-const ExtractOut = z.object({
+export const ExtractOut = z.object({
   oauthSupported: z.enum(["yes", "no", "unclear"]).catch("unclear"),
-  registrationUrl: z.string().default(""),
+  registrationUrl: str(),
   route: z.enum(["managed", "own_app", "unresolved"]).catch("unresolved"),
-  routeReason: z.string().default(""),
+  routeReason: str(),
   difficulty: z.enum(["low", "medium", "high", "unknown"]).catch("unknown"),
-  difficultyReason: z.string().default(""),
+  difficultyReason: str(),
   testingBeforeReview: MClaim.catch({ text: "Not verified.", sourceIds: [], quote: "", inferred: false }),
   mainBlocker: MClaim.catch({ text: "Not verified.", sourceIds: [], quote: "", inferred: false }),
-  nextAction: z.string().default(""),
+  nextAction: str(),
   activeWork: MClaim.catch({ text: "Not estimated.", sourceIds: [], quote: "", inferred: true }),
   reviewWait: MClaim.catch({ text: "", sourceIds: [], quote: "", inferred: false }),
   policyDeadlines: lenient(MClaim),
@@ -160,22 +171,22 @@ const ExtractOut = z.object({
   prerequisites: lenient(MClaim),
   permissions: lenient(
       z.preprocess(asObj("scope"), z.object({
-        scope: z.string(),
-        enables: z.string().default(""),
-        reviewImpact: z.string().default(""),
+        scope: reqStr(),
+        enables: str(),
+        reviewImpact: str(),
         sourceIds: ids,
-        quote: z.string().default(""),
+        quote: str(),
       })),
   ),
   steps: lenient(MStep),
   blockers: lenient(
       z.preprocess(asObj("symptom"), z.object({
-        symptom: z.string(),
-        cause: z.string().default(""),
-        nextAction: z.string().default(""),
+        symptom: reqStr(),
+        cause: str(),
+        nextAction: str(),
         owner: z.enum(["agent", "developer", "admin", "provider"]).catch("developer"),
         sourceIds: ids,
-        quote: z.string().default(""),
+        quote: str(),
       })),
   ),
   agentCan: lenient(textItem),
