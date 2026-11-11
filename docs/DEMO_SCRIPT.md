@@ -1,6 +1,6 @@
 # Demo script (about 5 minutes)
 
-**0. The library (30 s).** On the home page, the *Compare* table shows 21 apps hardest first: effort, route, your work, the provider's wait and the main blocker. Filter *High*: Google Drive, Google Calendar, Instagram, Spotify (250k MAU rule), Gmail. Open Spotify and point at the green *Reviewed* banner: what a person checked and corrected.
+**0. The library (30 s).** On the home page, the *Compare* table shows 21 apps hardest first: effort, route, your work, the provider's wait and the main blocker. Filter *High*: Gmail, Slack, Google Drive, Google Calendar, Instagram and Spotify (250k MAU rule). Open Spotify and point at the green *Reviewed* banner: what a person checked and corrected.
 
 **1. The problem (30 s).** On the home page, read the headline. "Before your agent can act in Gmail for your users, you register an OAuth app once. Users then click Allow. Some providers add a review that can take weeks. This tells you which case you're in."
 
