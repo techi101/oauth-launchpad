@@ -1,7 +1,7 @@
 import { publicOrigin } from "@/lib/origin";
 import { findToolkit } from "@/lib/composio";
 import { freshness } from "@/lib/freshness";
-import { SEEDS } from "@/lib/seeds";
+import { CURATED } from "@/lib/seeds";
 import { listGenerated, toCard } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.toLowerCase() ?? "";
   const origin = publicOrigin(req);
-  const cards = [...SEEDS.map(toCard), ...(await listGenerated(100))]
+  const cards = [...CURATED.map(toCard), ...(await listGenerated(100))]
     .filter((c) => !q || `${c.name} ${c.actions}`.toLowerCase().includes(q))
     .map((c) => ({
       ...c,

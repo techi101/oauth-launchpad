@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Guide, type Guide as GuideT } from "./schema";
-import { SEEDS } from "./seeds";
+import { CURATED } from "./seeds";
 
 /**
  * Generated guides are stored durably in Vercel Blob (BLOB_READ_WRITE_TOKEN).
@@ -47,7 +47,7 @@ export async function saveGuide(g: GuideT): Promise<void> {
 
 export async function getGuide(id: string): Promise<GuideT | null> {
   if (!/^[a-z0-9-]{1,80}$/.test(id)) return null;
-  const seed = SEEDS.find((s) => s.id === id);
+  const seed = CURATED.find((s) => s.id === id);
   if (seed) return seed;
   const mode = storageMode();
   try {
@@ -76,6 +76,9 @@ export type GuideCard = {
   difficulty: GuideT["summary"]["difficulty"];
   route: GuideT["summary"]["route"];
   reviewWait: string;
+  activeWork: string;
+  mainBlocker: string;
+  reviewed: boolean;
   kind: GuideT["kind"];
   status: GuideT["status"];
   createdAt: string;
@@ -89,6 +92,9 @@ export const toCard = (g: GuideT): GuideCard => ({
   difficulty: g.summary.difficulty,
   route: g.summary.route,
   reviewWait: g.timing.reviewWait.text,
+  activeWork: g.timing.activeWork.text,
+  mainBlocker: g.summary.mainBlocker.text,
+  reviewed: g.kind === "seed" || Boolean(g.review),
   kind: g.kind,
   status: g.status,
   createdAt: g.createdAt,
@@ -128,5 +134,6 @@ export async function listGenerated(limit = 24): Promise<GuideCard[]> {
   } catch {
     return [];
   }
-  return out.slice(0, limit).map(toCard);
+  const curated = new Set(CURATED.map((g) => g.id));
+  return out.filter((g) => !curated.has(g.id)).slice(0, limit).map(toCard);
 }

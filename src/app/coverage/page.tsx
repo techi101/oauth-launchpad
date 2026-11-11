@@ -2,7 +2,7 @@ import Link from "next/link";
 import { loadCatalog } from "@/lib/catalog";
 import { SNAPSHOT, findToolkit } from "@/lib/composio";
 import { freshShare } from "@/lib/freshness";
-import { SEEDS } from "@/lib/seeds";
+import { CURATED } from "@/lib/seeds";
 import { listGenerated } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ const norm = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a
 export default async function Coverage() {
   const generated = await listGenerated(100);
   const ours = new Map<string, string>();
-  for (const g of [...SEEDS.map((s) => ({ id: s.id, name: s.provider.name })), ...generated.map((g) => ({ id: g.id, name: g.name }))]) {
+  for (const g of [...CURATED.map((s) => ({ id: s.id, name: s.provider.name })), ...generated.map((g) => ({ id: g.id, name: g.name }))]) {
     const t = findToolkit(g.name);
     if (t && !ours.has(t.slug)) ours.set(t.slug, g.id);
   }
@@ -23,7 +23,7 @@ export default async function Coverage() {
   } catch {
     /* catalog optional */
   }
-  const fresh = freshShare([...SEEDS, ...generated.map((g) => ({ id: g.id, createdAt: g.createdAt }))]);
+  const fresh = freshShare([...CURATED, ...generated.map((g) => ({ id: g.id, createdAt: g.createdAt }))]);
 
   // Priority for the 100-guide library: apps every developer must register themselves,
   // that Composio has no walkthrough for, weighted by demand/pain signals.
@@ -44,7 +44,7 @@ export default async function Coverage() {
     ["Bring your own app", s.bringYourOwn, "every developer must register"],
     ["…with no Composio walkthrough", s.byoWithoutGuide, `Composio has ${s.composioGuides} own-app guides`],
     ["Default to legacy v1 redirect", s.defaultRedirectLegacyV1, "auth-config Redirect URI field; docs say register v3"],
-    ["Guides fresh (in review window)", `${Math.round(fresh * 100)}%`, `${SEEDS.length + generated.length} guides here`],
+    ["Guides fresh (in review window)", `${Math.round(fresh * 100)}%`, `${CURATED.length + generated.length} guides here`],
   ];
 
   return (

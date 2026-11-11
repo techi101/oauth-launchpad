@@ -171,3 +171,39 @@ describe("model output tolerance", () => {
     expect(r.data.steps[0].detail).toBe("42");
   });
 });
+
+describe("setup kit", () => {
+  const k = { appName: "Demo Agent", homepage: "https://demo.dev", redirectUri: "https://backend.composio.dev/api/v3/toolkits/auth/callback" };
+  it("builds a Slack manifest link with the guide's exact scopes", async () => {
+    const { kitFor, slackScopes } = await import("./setupKit");
+    const g = Guide.parse(slack);
+    const s = slackScopes(g);
+    expect(s.bot).toEqual(expect.arrayContaining(["channels:history", "chat:write"]));
+    const kit = kitFor(g, k);
+    expect(kit.kind).toBe("slack");
+    if (kit.kind !== "slack") return;
+    expect(kit.url.startsWith("https://api.slack.com/apps?new_app=1&manifest_json=")).toBe(true);
+    const m = JSON.parse(decodeURIComponent(kit.url.split("manifest_json=")[1]));
+    expect(m.oauth_config.redirect_urls).toEqual([k.redirectUri]);
+    expect(m.oauth_config.scopes.bot).toContain("chat:write");
+  });
+  it("builds a GitHub App registration URL with read/write permissions", async () => {
+    const { kitFor } = await import("./setupKit");
+    const kit = kitFor(Guide.parse(github), k);
+    expect(kit.kind).toBe("github");
+    if (kit.kind !== "github") return;
+    const u = new URL(kit.url);
+    expect(u.origin + u.pathname).toBe("https://github.com/settings/apps/new");
+    expect(u.searchParams.get("contents")).toBe("read");
+    expect(u.searchParams.get("issues")).toBe("write");
+    expect(u.searchParams.getAll("callback_urls[]")).toEqual([k.redirectUri]);
+  });
+  it("falls back to a paste-ready packet for providers without a documented prefill", async () => {
+    const { kitFor, packet } = await import("./setupKit");
+    const g = Guide.parse(gmail);
+    expect(kitFor(g, k).kind).toBe("packet");
+    const p = packet(g, k);
+    expect(p).toContain("Redirect / callback URI: " + k.redirectUri);
+    expect(p).toContain("gmail");
+  });
+});

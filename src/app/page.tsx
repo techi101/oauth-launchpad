@@ -2,7 +2,7 @@ import Link from "next/link";
 import GuideGrid from "@/components/GuideGrid";
 import ResearchForm from "@/components/ResearchForm";
 import { llmConfigured } from "@/lib/llm";
-import { SEEDS } from "@/lib/seeds";
+import { CURATED } from "@/lib/seeds";
 import { listGenerated, toCard } from "@/lib/store";
 import { SNAPSHOT } from "@/lib/composio";
 
@@ -22,7 +22,7 @@ export default async function Home() {
         </p>
       </section>
 
-      <GuideGrid seeds={SEEDS.map(toCard)} generated={generated} />
+      <GuideGrid seeds={CURATED.map(toCard)} generated={generated} />
 
       <p className="-mt-4 text-sm text-muted">
         Building on Composio? {SNAPSHOT.stats.bringYourOwn} of its {SNAPSHOT.stats.oauthToolkits} OAuth toolkits need your own app.{" "}

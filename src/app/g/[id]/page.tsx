@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Checklist from "@/components/Checklist";
 import OnComposio from "@/components/OnComposio";
+import SetupKit from "@/components/SetupKit";
 import { freshness } from "@/lib/freshness";
 import ResearchForm from "@/components/ResearchForm";
 import ShareBar from "@/components/ShareBar";
@@ -59,6 +60,20 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
           <Link href={recheck} className="text-accent underline">Re-check now with the agent</Link>
           <a href={`/g/${g.id}/json`} className="underline">JSON for agents</a>
         </p>
+        {g.review && (
+          <div className="rounded-md border border-emerald-600/40 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+            <p className="font-medium">
+              Reviewed {g.review.date}: {g.review.confirmed} of {g.review.checked} spot-checked claims confirmed against the cited pages.
+            </p>
+            {g.review.notes.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-xs">
+                {g.review.notes.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         {g.status === "partial" && (
           <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
             Partial result: some key facts could not be confirmed. Gaps are listed under “Uncertain”.
@@ -174,6 +189,10 @@ export default async function GuidePage({ params }: { params: Promise<{ id: stri
           </div>
         </Section>
       )}
+
+      <Section id="setup-kit" title="Let the agent start it" hint="The registration work an agent can do before you sign in: a prefilled link where the provider documents one, and every form value ready to paste.">
+        <SetupKit guide={g} />
+      </Section>
 
       <Section title="Checklist" hint="Steps grouped by stage. Each shows who owns it and how we know it.">
         <Checklist guide={g} />

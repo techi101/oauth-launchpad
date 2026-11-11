@@ -1,12 +1,12 @@
 import { publicOrigin } from "@/lib/origin";
-import { SEEDS } from "@/lib/seeds";
+import { CURATED } from "@/lib/seeds";
 import { listGenerated, toCard } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const origin = publicOrigin(req);
-  const cards = [...SEEDS.map(toCard), ...(await listGenerated(50))];
+  const cards = [...CURATED.map(toCard), ...(await listGenerated(50))];
   const body = `# OAuth Launchpad
 
 > OAuth app setup and approval guides for AI agent builders: route (Composio-managed vs your own app), developer effort vs provider review wait, scopes, checklist with owners, blockers, and quote-checked evidence.

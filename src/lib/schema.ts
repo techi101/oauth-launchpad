@@ -151,6 +151,15 @@ export const Guide = z.object({
   attempts: z.array(Attempt).default([]),
   uncertainties: z.array(z.string()).default([]),
   conflicts: z.array(z.string()).default([]),
+  /** Library guides: a person's spot-check of the agent's output against the sources. */
+  review: z
+    .object({
+      date: z.string(),
+      checked: z.number(),
+      confirmed: z.number(),
+      notes: z.array(z.string()).default([]),
+    })
+    .optional(),
   /** Generated guides: what the research run did, for inspection. */
   researchLog: z.array(z.string()).default([]),
 });
